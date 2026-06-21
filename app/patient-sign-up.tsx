@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,6 +16,33 @@ import { ClinicSelector } from '@/components/clinic-selector';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
 import { Clinic } from '@/constants/clinics';
+import { setPendingPatientRegistration } from '@/stores/patient-registration';
+import {
+  validateClinicSelection,
+  validateConfirmPassword,
+  validateFullName,
+  validateGhanaPhoneNumber,
+  validateSignUpEmail,
+  validateSignUpPassword,
+} from '@/utils/form-validation';
+
+type SignUpErrors = {
+  fullName: string;
+  phoneNumber: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  clinic: string;
+};
+
+const INITIAL_ERRORS: SignUpErrors = {
+  fullName: '',
+  phoneNumber: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  clinic: '',
+};
 
 export default function PatientSignUpScreen() {
   const router = useRouter();
@@ -26,24 +52,53 @@ export default function PatientSignUpScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
+  const [errors, setErrors] = useState<SignUpErrors>(INITIAL_ERRORS);
 
-  const handleCreateAccount = () => {
-    if (!fullName.trim() || !phoneNumber.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Missing information', 'Please complete all required fields.');
+  const clearError = (field: keyof SignUpErrors) => {
+    if (errors[field]) {
+      setErrors((current) => ({ ...current, [field]: '' }));
+    }
+  };
+
+  const handleNext = () => {
+    const fullNameError = validateFullName(fullName);
+    const phoneNumberError = validateGhanaPhoneNumber(phoneNumber);
+    const emailError = validateSignUpEmail(email);
+    const passwordError = validateSignUpPassword(password);
+    const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
+    const clinicError = validateClinicSelection(selectedClinic);
+
+    const nextErrors: SignUpErrors = {
+      fullName: fullNameError ?? '',
+      phoneNumber: phoneNumberError ?? '',
+      email: emailError ?? '',
+      password: passwordError ?? '',
+      confirmPassword: confirmPasswordError ?? '',
+      clinic: clinicError ?? '',
+    };
+
+    setErrors(nextErrors);
+
+    if (
+      fullNameError ||
+      phoneNumberError ||
+      emailError ||
+      passwordError ||
+      confirmPasswordError ||
+      clinicError
+    ) {
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Password mismatch', 'Password and confirm password must match.');
-      return;
-    }
+    setPendingPatientRegistration({
+      fullName: fullName.trim(),
+      phoneNumber: phoneNumber.replace(/\D/g, ''),
+      email: email.trim(),
+      password,
+      clinic: selectedClinic!,
+    });
 
-    if (!selectedClinic) {
-      Alert.alert('Clinic required', 'Please select your clinic before creating an account.');
-      return;
-    }
-
-    router.replace('/pregnancy-profile-setup');
+    router.push('/patient-privacy-agreement');
   };
 
   return (
@@ -65,46 +120,76 @@ export default function PatientSignUpScreen() {
               label="Full Name"
               placeholder="Enter your full name"
               value={fullName}
-              onChangeText={setFullName}
+              onChangeText={(value) => {
+                setFullName(value);
+                clearError('fullName');
+              }}
               autoCapitalize="words"
+              error={errors.fullName || undefined}
             />
 
             <AuthTextField
               label="Phone Number"
               placeholder="e.g. 024 123 4567"
               value={phoneNumber}
-              onChangeText={setPhoneNumber}
+              onChangeText={(value) => {
+                setPhoneNumber(value);
+                clearError('phoneNumber');
+              }}
               keyboardType="phone-pad"
+              error={errors.phoneNumber || undefined}
             />
 
             <AuthTextField
               label="Email Address"
               placeholder="you@example.com"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(value) => {
+                setEmail(value);
+                clearError('email');
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
+              error={errors.email || undefined}
             />
 
             <AuthTextField
               label="Password"
               placeholder="Create a password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(value) => {
+                setPassword(value);
+                clearError('password');
+                if (errors.confirmPassword) {
+                  clearError('confirmPassword');
+                }
+              }}
               isPassword
+              error={errors.password || undefined}
             />
 
             <AuthTextField
               label="Confirm Password"
               placeholder="Re-enter your password"
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={(value) => {
+                setConfirmPassword(value);
+                clearError('confirmPassword');
+              }}
               isPassword
+              error={errors.confirmPassword || undefined}
             />
 
-            <ClinicSelector selectedClinic={selectedClinic} onSelect={setSelectedClinic} />
+            <ClinicSelector
+              selectedClinic={selectedClinic}
+              onSelect={(clinic) => {
+                setSelectedClinic(clinic);
+                clearError('clinic');
+              }}
+              error={errors.clinic || undefined}
+            />
 
-            <PrimaryButton label="Create Account" onPress={handleCreateAccount} />
+            <PrimaryButton label="Next" onPress={handleNext} />
           </View>
 
           <View style={styles.links}>

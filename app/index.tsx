@@ -39,7 +39,7 @@ export default function MaternAlertSplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#ffffff', 
     justifyContent: 'center',
     alignItems: 'center',
   },

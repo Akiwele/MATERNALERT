@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,7 +17,7 @@ import { AuthTextField } from '@/components/auth-text-field';
 import { AuthTextLink } from '@/components/auth-text-link';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
-import { MOCK_VERIFIED_CLINIC } from '@/constants/mock-clinic-auth';
+import { validateEmail, validatePassword, validateRequired } from '@/utils/form-validation';
 
 function useResponsiveSpacing(screenHeight: number) {
   return useMemo(() => {
@@ -68,27 +67,30 @@ export default function ClinicLoginScreen() {
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errors, setErrors] = useState({
+    registrationNumber: '',
+    email: '',
+    password: '',
+  });
 
   const handleLogin = () => {
-    if (!registrationNumber.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Missing information', 'Please complete all login fields.');
+    const registrationNumberError = validateRequired(
+      registrationNumber,
+      'Clinic Registration Number',
+    );
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+
+    setErrors({
+      registrationNumber: registrationNumberError ?? '',
+      email: emailError ?? '',
+      password: passwordError ?? '',
+    });
+
+    if (registrationNumberError || emailError || passwordError) {
       return;
     }
 
-    const isVerified =
-      MOCK_VERIFIED_CLINIC.verified &&
-      registrationNumber.trim().toUpperCase() ===
-        MOCK_VERIFIED_CLINIC.registrationNumber.toUpperCase() &&
-      email.trim().toLowerCase() === MOCK_VERIFIED_CLINIC.email.toLowerCase() &&
-      password === MOCK_VERIFIED_CLINIC.password;
-
-    if (!isVerified) {
-      setErrorMessage('Clinic not verified. Please contact the system administrator.');
-      return;
-    }
-
-    setErrorMessage('');
     router.replace('/clinic-dashboard');
   };
 
@@ -135,9 +137,12 @@ export default function ClinicLoginScreen() {
                 value={registrationNumber}
                 onChangeText={(value) => {
                   setRegistrationNumber(value);
-                  if (errorMessage) setErrorMessage('');
+                  if (errors.registrationNumber) {
+                    setErrors((current) => ({ ...current, registrationNumber: '' }));
+                  }
                 }}
                 autoCapitalize="characters"
+                error={errors.registrationNumber || undefined}
               />
 
               <AuthTextField
@@ -146,10 +151,13 @@ export default function ClinicLoginScreen() {
                 value={email}
                 onChangeText={(value) => {
                   setEmail(value);
-                  if (errorMessage) setErrorMessage('');
+                  if (errors.email) {
+                    setErrors((current) => ({ ...current, email: '' }));
+                  }
                 }}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                error={errors.email || undefined}
               />
 
               <AuthTextField
@@ -158,9 +166,12 @@ export default function ClinicLoginScreen() {
                 value={password}
                 onChangeText={(value) => {
                   setPassword(value);
-                  if (errorMessage) setErrorMessage('');
+                  if (errors.password) {
+                    setErrors((current) => ({ ...current, password: '' }));
+                  }
                 }}
                 isPassword
+                error={errors.password || undefined}
               />
             </View>
 
@@ -172,8 +183,6 @@ export default function ClinicLoginScreen() {
               />
 
               <PrimaryButton label="Login" onPress={handleLogin} />
-
-              {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
             </View>
           </View>
 
@@ -219,11 +228,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     maxWidth: 320,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#B91C1C',
-    lineHeight: 20,
-    textAlign: 'center',
   },
 });

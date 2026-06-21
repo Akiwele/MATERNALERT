@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,6 +17,7 @@ import { AuthTextField } from '@/components/auth-text-field';
 import { AuthTextLink } from '@/components/auth-text-link';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
+import { validateEmail, validatePassword } from '@/utils/form-validation';
 
 function useResponsiveSpacing(screenHeight: number) {
   return useMemo(() => {
@@ -66,14 +66,22 @@ export default function PatientLoginScreen() {
   const spacing = useResponsiveSpacing(screenHeight);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({ email: '', password: '' });
 
   const handleLogin = () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Missing information', 'Please enter your email and password.');
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+
+    setErrors({
+      email: emailError ?? '',
+      password: passwordError ?? '',
+    });
+
+    if (emailError || passwordError) {
       return;
     }
 
-    Alert.alert('Login', 'Patient login will be connected to authentication soon.');
+    router.replace('/patient-dashboard');
   };
 
   return (
@@ -117,17 +125,29 @@ export default function PatientLoginScreen() {
                 label="Email Address"
                 placeholder="you@example.com"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  if (errors.email) {
+                    setErrors((current) => ({ ...current, email: '' }));
+                  }
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                error={errors.email || undefined}
               />
 
               <AuthTextField
                 label="Password"
                 placeholder="Enter your password"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  if (errors.password) {
+                    setErrors((current) => ({ ...current, password: '' }));
+                  }
+                }}
                 isPassword
+                error={errors.password || undefined}
               />
             </View>
 

@@ -8,9 +8,10 @@ import { Clinic, MOCK_CLINICS } from '@/constants/clinics';
 type ClinicSelectorProps = {
   selectedClinic: Clinic | null;
   onSelect: (clinic: Clinic) => void;
+  error?: string;
 };
 
-export function ClinicSelector({ selectedClinic, onSelect }: ClinicSelectorProps) {
+export function ClinicSelector({ selectedClinic, onSelect, error }: ClinicSelectorProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -86,6 +87,7 @@ export function ClinicSelector({ selectedClinic, onSelect }: ClinicSelectorProps
           </ScrollView>
         </View>
       ) : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
@@ -182,5 +184,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: BrandColors.textSecondary,
     textAlign: 'center',
+  },
+  error: {
+    fontSize: 13,
+    color: '#B91C1C',
+    lineHeight: 18,
   },
 });

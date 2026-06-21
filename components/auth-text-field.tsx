@@ -14,9 +14,15 @@ import { BrandColors } from '@/constants/brand';
 type AuthTextFieldProps = TextInputProps & {
   label: string;
   isPassword?: boolean;
+  error?: string;
 };
 
-export function AuthTextField({ label, isPassword = false, ...inputProps }: AuthTextFieldProps) {
+export function AuthTextField({
+  label,
+  isPassword = false,
+  error,
+  ...inputProps
+}: AuthTextFieldProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
@@ -44,6 +50,7 @@ export function AuthTextField({ label, isPassword = false, ...inputProps }: Auth
           </Pressable>
         ) : null}
       </View>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
@@ -84,5 +91,10 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     justifyContent: 'center',
+  },
+  error: {
+    fontSize: 13,
+    color: '#B91C1C',
+    lineHeight: 18,
   },
 });
