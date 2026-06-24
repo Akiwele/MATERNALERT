@@ -25,6 +25,7 @@ export default function RootLayout() {
         <Stack.Screen name="pregnancy-profile-setup" />
         <Stack.Screen name="patient-dashboard" />
         <Stack.Screen name="clinic-login" />
+        <Stack.Screen name="facility-registration-info" />
         <Stack.Screen name="clinic-forgot-password" />
         <Stack.Screen name="clinic-dashboard" />
         <Stack.Screen name="admin-login" />

@@ -187,7 +187,10 @@ export default function ClinicLoginScreen() {
           </View>
 
           <View style={styles.links}>
-            <Text style={styles.infoText}>Need clinic access? Contact system administrator.</Text>
+            <AuthTextLink
+              text="Need clinic access? Register your facility"
+              onPress={() => router.push('/facility-registration-info')}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -221,12 +224,6 @@ const styles = StyleSheet.create({
   actions: {},
   links: {
     alignItems: 'center',
-  },
-  infoText: {
-    fontSize: 15,
-    color: BrandColors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    maxWidth: 320,
+    marginTop: 4,
   },
 });
