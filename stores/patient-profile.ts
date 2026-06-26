@@ -37,6 +37,19 @@ export function setPatientProfile(profile: PatientProfile) {
   patientProfile = profile;
 }
 
+export function updatePatientProfile(updates: Partial<PatientProfile>) {
+  if (!patientProfile) {
+    return null;
+  }
+
+  patientProfile = {
+    ...patientProfile,
+    ...updates,
+  };
+
+  return patientProfile;
+}
+
 export function getPatientProfile() {
   return patientProfile;
 }

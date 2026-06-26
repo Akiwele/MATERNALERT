@@ -46,3 +46,31 @@ export function createPatientAccount(): PatientRegistration | null {
 export function getPatientRegistration() {
   return patientRegistration;
 }
+
+export function updatePatientClinic(clinic: Clinic) {
+  if (patientRegistration) {
+    patientRegistration = {
+      ...patientRegistration,
+      clinic,
+    };
+  }
+}
+
+export function updatePatientRegistration(
+  updates: Partial<Pick<PendingPatientRegistration, 'fullName' | 'phoneNumber' | 'email'>>,
+) {
+  if (!patientRegistration) {
+    return null;
+  }
+
+  patientRegistration = {
+    ...patientRegistration,
+    ...updates,
+  };
+
+  return patientRegistration;
+}
+
+export function clearPatientRegistration() {
+  patientRegistration = null;
+}

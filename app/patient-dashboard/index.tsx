@@ -5,6 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DashboardCard } from '@/components/patient-dashboard/dashboard-card';
 import { BrandColors } from '@/constants/brand';
+import { useAppointments } from '@/contexts/appointments-context';
+import {
+  formatAppointmentDate,
+  formatAppointmentTime,
+} from '@/utils/appointments';
 import {
   getPatientDisplayName,
   getPregnancySummaryDisplay,
@@ -28,6 +33,7 @@ const BABY_THIS_WEEK_TEXT =
 
 export default function PatientDashboardHomeScreen() {
   const router = useRouter();
+  const { nextAppointment } = useAppointments();
   const greeting = getTimeGreeting();
   const firstName = getPatientDisplayName();
   const summary = getPregnancySummaryDisplay();
@@ -41,7 +47,6 @@ export default function PatientDashboardHomeScreen() {
           <Text style={styles.greetingTitle}>
             {greeting}, {firstName} 👋
           </Text>
-          <Text style={styles.greetingSubtitle}>Welcome back to MaternAlert 💚</Text>
         </View>
 
         <DashboardCard title="Pregnancy Summary">
@@ -85,7 +90,20 @@ export default function PatientDashboardHomeScreen() {
         </DashboardCard>
 
         <DashboardCard title="Next Antenatal Appointment">
-          <Text style={styles.appointmentText}>No appointment scheduled yet</Text>
+          {nextAppointment ? (
+            <View style={styles.nextAppointmentBlock}>
+              <Text style={styles.nextAppointmentClinic}>{nextAppointment.clinicName}</Text>
+              <Text style={styles.nextAppointmentLine}>
+                {formatAppointmentDate(nextAppointment.appointmentDate)}
+              </Text>
+              <Text style={styles.nextAppointmentLine}>
+                {formatAppointmentTime(nextAppointment.appointmentTime)}
+              </Text>
+              <Text style={styles.nextAppointmentType}>{nextAppointment.appointmentType}</Text>
+            </View>
+          ) : (
+            <Text style={styles.appointmentText}>No appointment scheduled yet.</Text>
+          )}
           <Pressable
             style={styles.secondaryButton}
             onPress={() => router.push('/patient-dashboard/appointments')}>
@@ -138,17 +156,13 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   greeting: {
-    gap: 6,
+    marginTop: 4,
     marginBottom: 4,
   },
   greetingTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: BrandColors.text,
-  },
-  greetingSubtitle: {
-    fontSize: 15,
-    color: BrandColors.textSecondary,
   },
   summaryHeadline: {
     fontSize: 18,
@@ -220,6 +234,25 @@ const styles = StyleSheet.create({
   },
   appointmentText: {
     fontSize: 15,
+    color: BrandColors.textSecondary,
+  },
+  nextAppointmentBlock: {
+    gap: 4,
+  },
+  nextAppointmentClinic: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: BrandColors.primaryDark,
+    lineHeight: 22,
+  },
+  nextAppointmentLine: {
+    fontSize: 15,
+    color: BrandColors.text,
+    lineHeight: 22,
+  },
+  nextAppointmentType: {
+    fontSize: 14,
+    fontWeight: '600',
     color: BrandColors.textSecondary,
   },
   secondaryButton: {
