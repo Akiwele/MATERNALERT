@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { APPOINTMENT_TYPES, type AppointmentType } from '@/constants/appointment-types';
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 
 type AppointmentTypeSelectorProps = {
   selectedType: AppointmentType | null;
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
     zIndex: 4,
   },
   label: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.text,
   },
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
   },
   selectorText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: PatientDashboardTypography.body,
     color: BrandColors.text,
     marginRight: 8,
   },
@@ -110,12 +111,12 @@ const styles = StyleSheet.create({
     backgroundColor: BrandColors.primaryLight,
   },
   optionText: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.bodySmall,
     color: BrandColors.text,
   },
   error: {
-    fontSize: 13,
+    fontSize: PatientDashboardTypography.caption,
     color: '#B91C1C',
-    lineHeight: 18,
+    lineHeight: 20,
   },
 });

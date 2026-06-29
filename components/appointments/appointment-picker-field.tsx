@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import { formatAppointmentDate, formatAppointmentTime } from '@/utils/appointments';
 
 export type IosPickerRequest = {
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.text,
   },
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
   },
   selectorText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: PatientDashboardTypography.body,
     color: BrandColors.text,
     marginRight: 8,
   },
@@ -126,8 +127,8 @@ const styles = StyleSheet.create({
     color: BrandColors.textSecondary,
   },
   error: {
-    fontSize: 13,
+    fontSize: PatientDashboardTypography.caption,
     color: '#B91C1C',
-    lineHeight: 18,
+    lineHeight: 20,
   },
 });

@@ -2,6 +2,7 @@ import { ChevronRight, LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 
 type ProfileNavRowProps = {
   label: string;
@@ -56,7 +57,7 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '500',
     color: BrandColors.text,
   },

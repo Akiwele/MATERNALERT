@@ -13,6 +13,7 @@ import {
 import { useCallback, useState } from 'react';
 import {
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,6 +22,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ClinicSelector } from '@/components/clinic-selector';
 import {
   ProfileDetailRow,
   ProfileSectionCard,
@@ -28,6 +30,8 @@ import {
 import { ProfileNavRow } from '@/components/profile/profile-nav-row';
 import { ProfileNavGroup, ProfileToggleRow } from '@/components/profile/profile-settings-rows';
 import { BrandColors } from '@/constants/brand';
+import { Clinic } from '@/constants/clinics';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import {
   getNotificationSettings,
   updateNotificationSettings,
@@ -35,9 +39,13 @@ import {
 import {
   clearPatientRegistration,
   getPatientRegistration,
+  updatePatientClinic,
 } from '@/stores/patient-registration';
 import { clearPatientProfile, getPatientProfile } from '@/stores/patient-profile';
 import { getPregnancySummaryDisplay } from '@/utils/patient-dashboard-data';
+import { ACCOUNT_TYPE_LOGIN_ROUTES } from '@/types/app-navigation';
+import { getSavedAccountType } from '@/utils/account-type-storage';
+import { clearAuthSession } from '@/utils/auth-session-storage';
 import {
   formatDateOfBirth,
   formatMedicalConditions,
@@ -46,11 +54,14 @@ import {
   formatYesNo,
 } from '@/utils/profile-display';
 import { formatDisplayDate } from '@/utils/pregnancy-calculations';
+import { syncPatientToCareNetwork, transferPatientToClinic } from '@/utils/sync-patient-care-network';
 
 export default function PatientProfileScreen() {
   const router = useRouter();
   const [, setRefreshKey] = useState(0);
   const [notificationSettings, setNotificationSettings] = useState(getNotificationSettings());
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [selectedTransferClinic, setSelectedTransferClinic] = useState<Clinic | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -68,8 +79,41 @@ export default function PatientProfileScreen() {
 
   const handleClinicTransfer = () => {
     Alert.alert(
-      'Request Clinic Transfer',
-      'Your clinic transfer request will be reviewed by the MaternAlert team. This feature will be available soon.',
+      'Clinic Transfer',
+      'In antenatal care, your ANC record travels with you when you move facilities. With your consent, verified clinics can access your pregnancy record using your name, phone number, or ANC book number.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Select New Clinic',
+          onPress: () => {
+            setSelectedTransferClinic(registration?.clinic ?? null);
+            setShowTransferModal(true);
+          },
+        },
+      ],
+    );
+  };
+
+  const handleConfirmTransfer = () => {
+    if (!selectedTransferClinic) {
+      Alert.alert('Select a clinic', 'Please choose the facility you are transferring to.');
+      return;
+    }
+
+    if (selectedTransferClinic.name === registration?.clinic?.name) {
+      Alert.alert('Same clinic', 'You are already registered at this clinic.');
+      return;
+    }
+
+    updatePatientClinic(selectedTransferClinic);
+    transferPatientToClinic(selectedTransferClinic.name);
+    syncPatientToCareNetwork();
+    setShowTransferModal(false);
+    setRefreshKey((current) => current + 1);
+
+    Alert.alert(
+      'Transfer recorded',
+      `${selectedTransferClinic.name} can now access your pregnancy record with your consent, similar to presenting your ANC book at a new facility.`,
     );
   };
 
@@ -79,10 +123,13 @@ export default function PatientProfileScreen() {
       {
         text: 'Sign Out',
         style: 'destructive',
-        onPress: () => {
+        onPress: async () => {
           clearPatientProfile();
           clearPatientRegistration();
-          router.replace('/choose-account-type');
+          await clearAuthSession();
+
+          const accountType = await getSavedAccountType();
+          router.replace(accountType ? ACCOUNT_TYPE_LOGIN_ROUTES[accountType] : '/patient-login');
         },
       },
     ]);
@@ -116,6 +163,10 @@ export default function PatientProfileScreen() {
           <ProfileDetailRow
             label="Phone Number"
             value={formatProfileValue(registration?.phoneNumber)}
+          />
+          <ProfileDetailRow
+            label="ANC Book Number"
+            value={formatProfileValue(profile?.ancBookNumber) || 'Not provided'}
           />
           <ProfileDetailRow
             label="Email Address"
@@ -183,11 +234,15 @@ export default function PatientProfileScreen() {
             label="Registered Clinic Name"
             value={formatProfileValue(registration?.clinic?.name)}
           />
+          <Text style={styles.clinicHelperText}>
+            Your record is identified by your name and phone number, with an optional ANC book
+            number — not a clinic-specific ID.
+          </Text>
           <Pressable
             style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
             onPress={handleClinicTransfer}>
             <Building2 size={18} color={BrandColors.primaryDark} />
-            <Text style={styles.secondaryButtonText}>Request Clinic Transfer</Text>
+            <Text style={styles.secondaryButtonText}>Transfer to Another Clinic</Text>
           </Pressable>
         </ProfileSectionCard>
 
@@ -277,6 +332,38 @@ export default function PatientProfileScreen() {
           <Text style={styles.signOutText}>Sign Out</Text>
         </Pressable>
       </ScrollView>
+
+      <Modal
+        visible={showTransferModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowTransferModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Transfer to a new clinic</Text>
+            <Text style={styles.modalText}>
+              Select the verified clinic you are moving to. You consent to share your pregnancy
+              record with that facility.
+            </Text>
+            <ClinicSelector
+              selectedClinic={selectedTransferClinic}
+              onSelect={setSelectedTransferClinic}
+            />
+            <View style={styles.modalActions}>
+              <Pressable
+                style={({ pressed }) => [styles.modalCancelButton, pressed && styles.buttonPressed]}
+                onPress={() => setShowTransferModal(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.modalConfirmButton, pressed && styles.buttonPressed]}
+                onPress={handleConfirmTransfer}>
+                <Text style={styles.modalConfirmText}>Confirm Transfer</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -298,7 +385,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pageTitle: {
-    fontSize: 24,
+    fontSize: PatientDashboardTypography.greeting,
     fontWeight: '700',
     color: BrandColors.text,
     textAlign: 'center',
@@ -318,13 +405,13 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: PatientDashboardTypography.sectionHeading,
     fontWeight: '700',
     color: BrandColors.text,
     textAlign: 'left',
   },
   profileMeta: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     color: BrandColors.primaryDark,
     fontWeight: '600',
     textAlign: 'left',
@@ -342,9 +429,70 @@ const styles = StyleSheet.create({
     borderColor: BrandColors.primaryLight,
   },
   secondaryButtonText: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '600',
     color: BrandColors.primaryDark,
+  },
+  clinicHelperText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: BrandColors.textSecondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: BrandColors.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 28,
+    gap: 14,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: BrandColors.text,
+  },
+  modalText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: BrandColors.textSecondary,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  modalCancelButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: BrandColors.border,
+  },
+  modalCancelText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: BrandColors.textSecondary,
+  },
+  modalConfirmButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    paddingVertical: 14,
+    backgroundColor: BrandColors.primary,
+  },
+  modalConfirmText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: BrandColors.white,
   },
   signOutButton: {
     marginTop: 8,
@@ -359,7 +507,7 @@ const styles = StyleSheet.create({
     backgroundColor: BrandColors.white,
   },
   signOutText: {
-    fontSize: 16,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '600',
     color: '#DC2626',
   },

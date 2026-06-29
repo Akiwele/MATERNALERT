@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 
 type HealthActionCardProps = {
   label: string;
@@ -51,9 +52,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.text,
-    lineHeight: 18,
+    lineHeight: 20,
   },
 });

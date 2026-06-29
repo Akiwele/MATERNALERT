@@ -1,12 +1,14 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { HeartPulse, Hospital } from 'lucide-react-native';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AccountTypeCard } from '@/components/account-type-card';
 import { BrandColors } from '@/constants/brand';
+import { ACCOUNT_TYPE_LOGIN_ROUTES } from '@/types/app-navigation';
+import { getSavedAccountType, saveAccountType } from '@/utils/account-type-storage';
 
 function useResponsiveSpacing(screenHeight: number) {
   return useMemo(() => {
@@ -51,6 +53,23 @@ export default function ChooseAccountTypeScreen() {
   const { height: screenHeight } = useWindowDimensions();
   const spacing = useResponsiveSpacing(screenHeight);
 
+  useEffect(() => {
+    const redirectIfAccountTypeSaved = async () => {
+      const savedAccountType = await getSavedAccountType();
+
+      if (savedAccountType) {
+        router.replace(ACCOUNT_TYPE_LOGIN_ROUTES[savedAccountType]);
+      }
+    };
+
+    redirectIfAccountTypeSaved();
+  }, [router]);
+
+  const handleSelectAccountType = async (accountType: 'patient' | 'clinic') => {
+    await saveAccountType(accountType);
+    router.push(ACCOUNT_TYPE_LOGIN_ROUTES[accountType]);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ScrollView
@@ -82,7 +101,7 @@ export default function ChooseAccountTypeScreen() {
             title="Pregnant Woman"
             description="Track your pregnancy, appointments, and health alerts."
             buttonText="Continue"
-            onPress={() => router.push('/patient-login')}
+            onPress={() => handleSelectAccountType('patient')}
           />
 
           <AccountTypeCard
@@ -90,7 +109,7 @@ export default function ChooseAccountTypeScreen() {
             title="Clinic / Doctor"
             description="Manage patients, antenatal visits, and health records."
             buttonText="Continue"
-            onPress={() => router.push('/clinic-login')}
+            onPress={() => handleSelectAccountType('clinic')}
           />
         </View>
       </ScrollView>

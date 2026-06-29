@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 
 type ProfileSectionCardProps = {
   title: string;
@@ -67,12 +68,12 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontSize: 17,
+    fontSize: PatientDashboardTypography.cardTitle,
     fontWeight: '700',
     color: BrandColors.text,
   },
   action: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.primary,
   },
@@ -83,13 +84,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   label: {
-    fontSize: 13,
+    fontSize: PatientDashboardTypography.caption,
     fontWeight: '600',
     color: BrandColors.textSecondary,
   },
   value: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.bodySmall,
     color: BrandColors.text,
-    lineHeight: 22,
+    lineHeight: 24,
   },
 });

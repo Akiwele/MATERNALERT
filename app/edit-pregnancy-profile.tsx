@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PregnancyProfileForm } from '@/components/pregnancy-profile-form';
 import { BrandColors } from '@/constants/brand';
 import { getPatientProfile, updatePatientProfile } from '@/stores/patient-profile';
+import { syncPatientToCareNetwork } from '@/utils/sync-patient-care-network';
 
 export default function EditPregnancyProfileScreen() {
   const router = useRouter();
@@ -70,7 +71,10 @@ export default function EditPregnancyProfileScreen() {
                 medicalConditions: result.medicalConditions,
                 otherConditionDetails: result.otherConditionDetails,
                 riskStatus: result.riskStatus,
+                ancBookNumber: result.ancBookNumber,
               });
+
+              syncPatientToCareNetwork();
 
               router.back();
             }}

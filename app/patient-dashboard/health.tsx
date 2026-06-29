@@ -3,14 +3,15 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BloodPressureModal } from '@/components/health/blood-pressure-modal';
 import { HealthActionCard } from '@/components/health/health-action-card';
 import { HealthRecordCard } from '@/components/health/health-record-card';
-import { MedicationModal } from '@/components/health/medication-modal';
-import { SymptomsModal } from '@/components/health/symptoms-modal';
-import { WeightModal } from '@/components/health/weight-modal';
+import {
+  LogHealthRecordModal,
+  type HealthLogFocusSection,
+} from '@/components/health/log-health-record-modal';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import { useHealth } from '@/contexts/health-context';
 import {
   formatBloodPressure,
@@ -19,29 +20,31 @@ import {
   formatWeight,
 } from '@/utils/health-display';
 
-type ActiveModal = 'bloodPressure' | 'weight' | 'symptoms' | 'medication' | null;
-
-const HEALTH_ACTIONS = [
-  { id: 'bloodPressure' as const, label: '🩸 Blood Pressure', icon: Activity },
-  { id: 'weight' as const, label: '⚖️ Weight', icon: Scale },
-  { id: 'symptoms' as const, label: '🤒 Symptoms', icon: Thermometer },
-  { id: 'medication' as const, label: '💊 Medications', icon: Pill },
+const HEALTH_ACTIONS: {
+  id: HealthLogFocusSection;
+  label: string;
+  icon: typeof Activity;
+}[] = [
+  { id: 'bloodPressure', label: '🩸 Blood Pressure', icon: Activity },
+  { id: 'weight', label: '⚖️ Weight', icon: Scale },
+  { id: 'symptoms', label: '🤒 Symptoms', icon: Thermometer },
+  { id: 'medication', label: '💊 Medications', icon: Pill },
 ];
 
 export default function PatientHealthScreen() {
-  const {
-    records,
-    medications,
-    summary,
-    saveBloodPressure,
-    saveWeight,
-    saveSymptoms,
-    saveMedication,
-  } = useHealth();
-  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const { records, medications, summary, saveHealthRecord } = useHealth();
+  const [isLogModalVisible, setIsLogModalVisible] = useState(false);
+  const [logFocusSection, setLogFocusSection] = useState<HealthLogFocusSection | null>(null);
 
-  const openModal = (modal: ActiveModal) => setActiveModal(modal);
-  const closeModal = () => setActiveModal(null);
+  const openLogModal = (section?: HealthLogFocusSection) => {
+    setLogFocusSection(section ?? null);
+    setIsLogModalVisible(true);
+  };
+
+  const closeLogModal = () => {
+    setIsLogModalVisible(false);
+    setLogFocusSection(null);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -71,6 +74,8 @@ export default function PatientHealthScreen() {
           </View>
         </View>
 
+        <PrimaryButton label="Log Health Record" onPress={() => openLogModal()} />
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Health Actions</Text>
           <View style={styles.actionsGrid}>
@@ -79,7 +84,7 @@ export default function PatientHealthScreen() {
                 key={action.id}
                 label={action.label}
                 icon={action.icon}
-                onPress={() => openModal(action.id)}
+                onPress={() => openLogModal(action.id)}
               />
             ))}
           </View>
@@ -119,35 +124,18 @@ export default function PatientHealthScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>No health records yet.</Text>
-              <PrimaryButton
-                label="Add Your First Record"
-                onPress={() => openModal('weight')}
-              />
+              <PrimaryButton label="Log Health Record" onPress={() => openLogModal()} />
             </View>
           )}
         </View>
       </ScrollView>
 
-      <BloodPressureModal
-        visible={activeModal === 'bloodPressure'}
-        onClose={closeModal}
-        onSave={saveBloodPressure}
-      />
-      <WeightModal
-        visible={activeModal === 'weight'}
+      <LogHealthRecordModal
+        visible={isLogModalVisible}
+        initialSection={logFocusSection}
         initialWeight={summary.currentWeightKg}
-        onClose={closeModal}
-        onSave={saveWeight}
-      />
-      <SymptomsModal
-        visible={activeModal === 'symptoms'}
-        onClose={closeModal}
-        onSave={saveSymptoms}
-      />
-      <MedicationModal
-        visible={activeModal === 'medication'}
-        onClose={closeModal}
-        onSave={saveMedication}
+        onClose={closeLogModal}
+        onSave={saveHealthRecord}
       />
     </SafeAreaView>
   );
@@ -170,7 +158,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pageTitle: {
-    fontSize: 24,
+    fontSize: PatientDashboardTypography.greeting,
     fontWeight: '700',
     color: BrandColors.text,
     textAlign: 'center',
@@ -189,7 +177,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   summaryTitle: {
-    fontSize: 17,
+    fontSize: PatientDashboardTypography.cardTitle,
     fontWeight: '700',
     color: BrandColors.primaryDark,
     marginBottom: 2,
@@ -201,12 +189,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.textSecondary,
   },
   summaryValue: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '700',
     color: BrandColors.text,
     textAlign: 'right',
@@ -216,8 +204,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: PatientDashboardTypography.sectionHeading,
+    fontWeight: '600',
     color: BrandColors.text,
   },
   actionsGrid: {
@@ -237,23 +225,23 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   medicationName: {
-    fontSize: 16,
+    fontSize: PatientDashboardTypography.cardTitle,
     fontWeight: '700',
     color: BrandColors.text,
   },
   medicationDetail: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.bodySmall,
     color: BrandColors.text,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   medicationMeta: {
-    fontSize: 13,
+    fontSize: PatientDashboardTypography.caption,
     color: BrandColors.textSecondary,
   },
   medicationNotes: {
-    fontSize: 13,
+    fontSize: PatientDashboardTypography.caption,
     color: BrandColors.textSecondary,
-    lineHeight: 18,
+    lineHeight: 20,
     marginTop: 4,
     fontStyle: 'italic',
   },
@@ -267,7 +255,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     color: BrandColors.textSecondary,
     textAlign: 'center',
   },

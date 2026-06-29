@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
+import { resolveInitialRoute } from '@/utils/initial-route';
+
 const SPLASH_DURATION_MS = 2000;
 
 export default function MaternAlertSplashScreen() {
@@ -14,13 +16,25 @@ export default function MaternAlertSplashScreen() {
   const logoHeight = logoWidth * 1.15;
 
   useEffect(() => {
-    SplashScreen.hideAsync();
+    let isActive = true;
 
-    const timer = setTimeout(() => {
-      router.replace('/choose-account-type');
-    }, SPLASH_DURATION_MS);
+    const initializeApp = async () => {
+      await SplashScreen.hideAsync();
+      await new Promise((resolve) => setTimeout(resolve, SPLASH_DURATION_MS));
 
-    return () => clearTimeout(timer);
+      if (!isActive) {
+        return;
+      }
+
+      const initialRoute = await resolveInitialRoute();
+      router.replace(initialRoute);
+    };
+
+    initializeApp();
+
+    return () => {
+      isActive = false;
+    };
   }, [router]);
 
   return (
@@ -39,7 +53,7 @@ export default function MaternAlertSplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff', 
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
   },

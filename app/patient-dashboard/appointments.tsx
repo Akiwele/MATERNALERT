@@ -8,6 +8,7 @@ import { AppointmentStatusBadge } from '@/components/appointments/appointment-st
 import { PrimaryButton } from '@/components/primary-button';
 import { DashboardCard } from '@/components/patient-dashboard/dashboard-card';
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import { useAppointments } from '@/contexts/appointments-context';
 import {
   formatAppointmentDate,
@@ -99,13 +100,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    fontSize: 24,
+    fontSize: PatientDashboardTypography.greeting,
     fontWeight: '700',
     color: BrandColors.text,
   },
   subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: PatientDashboardTypography.body,
+    lineHeight: 24,
     color: BrandColors.textSecondary,
   },
   nextAppointmentContent: {
@@ -119,42 +120,42 @@ const styles = StyleSheet.create({
   },
   nextClinicName: {
     flex: 1,
-    fontSize: 17,
+    fontSize: PatientDashboardTypography.cardTitleLarge,
     fontWeight: '700',
     color: BrandColors.primaryDark,
-    lineHeight: 24,
+    lineHeight: 26,
   },
   nextDetail: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     color: BrandColors.text,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   nextType: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.textSecondary,
     marginTop: 2,
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     color: BrandColors.textSecondary,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   listSection: {
     gap: 12,
     marginTop: 4,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: PatientDashboardTypography.sectionHeading,
+    fontWeight: '600',
     color: BrandColors.text,
   },
   list: {
     gap: 12,
   },
   emptyListText: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.bodySmall,
     color: BrandColors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 22,
   },
 });

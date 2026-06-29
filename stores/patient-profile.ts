@@ -29,6 +29,7 @@ export type PatientProfile = {
   medicalConditions: MedicalCondition[];
   otherConditionDetails: string;
   riskStatus: string;
+  ancBookNumber?: string;
 };
 
 let patientProfile: PatientProfile | null = null;

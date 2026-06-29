@@ -1,3 +1,10 @@
+export type HealthRecordMedication = {
+  name: string;
+  dosage: string;
+  frequency: string;
+  notes?: string;
+};
+
 export type HealthRecord = {
   id: string;
   recordedAt: string;
@@ -6,6 +13,8 @@ export type HealthRecord = {
   diastolic?: number;
   symptoms: string[];
   symptomNotes?: string;
+  medication?: HealthRecordMedication;
+  notes?: string;
 };
 
 export type Medication = {
@@ -24,18 +33,12 @@ export type HealthSummary = {
   lastUpdatedAt: string | null;
 };
 
-export type SaveBloodPressureInput = {
-  systolic: number;
-  diastolic: number;
-};
-
-export type SaveWeightInput = {
-  weightKg: number;
-};
-
-export type SaveSymptomsInput = {
-  symptoms: string[];
+export type SaveHealthRecordInput = {
+  systolic?: number;
+  diastolic?: number;
+  weightKg?: number;
+  symptoms?: string[];
   symptomNotes?: string;
+  medication?: HealthRecordMedication;
+  notes?: string;
 };
-
-export type SaveMedicationInput = Omit<Medication, 'id'>;

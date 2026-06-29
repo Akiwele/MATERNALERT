@@ -28,6 +28,7 @@ export type PregnancyProfileFormResult = {
   medicalConditions: MedicalCondition[];
   otherConditionDetails: string;
   riskStatus: string;
+  ancBookNumber?: string;
 };
 
 type PregnancyProfileFormProps = {
@@ -87,6 +88,7 @@ export function PregnancyProfileForm({
     initialProfile?.otherConditionDetails ?? '',
   );
   const [allergies, setAllergies] = useState(initialProfile?.allergies ?? '');
+  const [ancBookNumber, setAncBookNumber] = useState(initialProfile?.ancBookNumber ?? '');
 
   const showEmergencyContactDetails = emergencyContactPhone.trim().length > 0;
   const showSetupFields = mode === 'setup';
@@ -237,6 +239,7 @@ export function PregnancyProfileForm({
       medicalConditions: selectedConditions,
       otherConditionDetails: otherConditionDetails.trim(),
       riskStatus: getRiskStatusFromConditions(selectedConditions),
+      ancBookNumber: ancBookNumber.trim() || undefined,
     });
   };
 
@@ -276,7 +279,25 @@ export function PregnancyProfileForm({
               />
             </>
           ) : null}
+
+          <AuthTextField
+            label="ANC Book Number (optional)"
+            placeholder="e.g. ANC-2026-00482"
+            value={ancBookNumber}
+            onChangeText={setAncBookNumber}
+            autoCapitalize="characters"
+          />
         </>
+      ) : null}
+
+      {!showSetupFields ? (
+        <AuthTextField
+          label="ANC Book Number (optional)"
+          placeholder="e.g. ANC-2026-00482"
+          value={ancBookNumber}
+          onChangeText={setAncBookNumber}
+          autoCapitalize="characters"
+        />
       ) : null}
 
       <AuthDateField

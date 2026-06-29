@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 
 export default function PatientEducationScreen() {
   return (
@@ -42,13 +43,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 22,
+    fontSize: PatientDashboardTypography.greeting,
     fontWeight: '700',
     color: BrandColors.text,
   },
   subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: PatientDashboardTypography.body,
+    lineHeight: 24,
     color: BrandColors.textSecondary,
     textAlign: 'center',
   },

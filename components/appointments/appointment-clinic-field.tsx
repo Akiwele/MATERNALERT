@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ClinicSelector } from '@/components/clinic-selector';
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import type { Clinic } from '@/constants/clinics';
 
 type AppointmentClinicFieldProps = {
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
     zIndex: 6,
   },
   label: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.text,
   },
@@ -80,32 +81,32 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   clinicName: {
-    fontSize: 16,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '600',
     color: BrandColors.primaryDark,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   emptyState: {
     gap: 6,
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.bodySmall,
     color: BrandColors.textSecondary,
   },
   selectLink: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.primary,
   },
   changeLink: {
-    fontSize: 13,
+    fontSize: PatientDashboardTypography.caption,
     fontWeight: '600',
     color: BrandColors.primary,
     alignSelf: 'flex-start',
   },
   error: {
-    fontSize: 13,
+    fontSize: PatientDashboardTypography.caption,
     color: '#B91C1C',
-    lineHeight: 18,
+    lineHeight: 20,
   },
 });

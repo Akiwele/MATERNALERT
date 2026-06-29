@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PregnancyProfileForm } from '@/components/pregnancy-profile-form';
 import { BrandColors } from '@/constants/brand';
 import { setPatientProfile } from '@/stores/patient-profile';
+import { syncPatientToCareNetwork } from '@/utils/sync-patient-care-network';
 
 function useResponsiveSpacing(screenHeight: number) {
   return useMemo(() => {
@@ -85,7 +86,10 @@ export default function PregnancyProfileSetupScreen() {
                   medicalConditions: result.medicalConditions,
                   otherConditionDetails: result.otherConditionDetails,
                   riskStatus: result.riskStatus,
+                  ancBookNumber: result.ancBookNumber,
                 });
+
+                syncPatientToCareNetwork();
 
                 router.replace('/patient-dashboard');
               }}

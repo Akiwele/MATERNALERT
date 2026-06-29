@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import type { HealthRecord } from '@/types/health';
 import {
   formatHealthRecordDate,
@@ -38,6 +39,25 @@ export function HealthRecordCard({ record }: HealthRecordCardProps) {
           <Text style={styles.notes}>{record.symptomNotes.trim()}</Text>
         ) : null}
       </View>
+
+      {record.medication ? (
+        <View style={styles.medicationBlock}>
+          <Text style={styles.label}>Medication:</Text>
+          <Text style={styles.value}>
+            {record.medication.name} • {record.medication.dosage} • {record.medication.frequency}
+          </Text>
+          {record.medication.notes?.trim() ? (
+            <Text style={styles.notes}>{record.medication.notes.trim()}</Text>
+          ) : null}
+        </View>
+      ) : null}
+
+      {record.notes?.trim() ? (
+        <View style={styles.notesBlock}>
+          <Text style={styles.label}>Notes:</Text>
+          <Text style={styles.notes}>{record.notes.trim()}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -57,7 +77,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   date: {
-    fontSize: 16,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '700',
     color: BrandColors.primaryDark,
   },
@@ -67,12 +87,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   label: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     color: BrandColors.textSecondary,
     fontWeight: '600',
   },
   value: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.text,
     textAlign: 'right',
@@ -81,15 +101,21 @@ const styles = StyleSheet.create({
   symptomsBlock: {
     gap: 4,
   },
+  medicationBlock: {
+    gap: 4,
+  },
+  notesBlock: {
+    gap: 4,
+  },
   symptomsValue: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     color: BrandColors.text,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   notes: {
-    fontSize: 13,
+    fontSize: PatientDashboardTypography.caption,
     color: BrandColors.textSecondary,
-    lineHeight: 18,
+    lineHeight: 20,
     fontStyle: 'italic',
   },
 });

@@ -21,12 +21,14 @@ import { AuthTextField } from '@/components/auth-text-field';
 import { PrimaryButton } from '@/components/primary-button';
 import type { AppointmentType } from '@/constants/appointment-types';
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import type { Clinic } from '@/constants/clinics';
 import {
   getPatientRegistration,
   updatePatientClinic,
 } from '@/stores/patient-registration';
 import type { AntenatalAppointmentInput } from '@/utils/appointments';
+import { transferPatientToClinic } from '@/utils/sync-patient-care-network';
 
 type AddAppointmentModalProps = {
   visible: boolean;
@@ -73,6 +75,7 @@ export function AddAppointmentModal({ visible, onClose, onSave }: AddAppointment
   const handleSelectClinic = (clinic: Clinic) => {
     setSelectedClinic(clinic);
     updatePatientClinic(clinic);
+    transferPatientToClinic(clinic.name);
 
     if (errors.clinic) {
       setErrors((current) => ({ ...current, clinic: undefined }));
@@ -240,12 +243,12 @@ const styles = StyleSheet.create({
     borderBottomColor: BrandColors.border,
   },
   title: {
-    fontSize: 18,
+    fontSize: PatientDashboardTypography.sectionHeading,
     fontWeight: '700',
     color: BrandColors.text,
   },
   closeText: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '600',
     color: BrandColors.primary,
   },

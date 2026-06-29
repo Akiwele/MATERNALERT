@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 
 type ProfileToggleRowProps = {
   label: string;
@@ -55,14 +56,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   label: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '500',
     color: BrandColors.text,
   },
   description: {
-    fontSize: 13,
+    fontSize: PatientDashboardTypography.caption,
     color: BrandColors.textSecondary,
-    lineHeight: 18,
+    lineHeight: 20,
   },
   group: {
     gap: 0,

@@ -8,6 +8,7 @@ import {
   getPregnancyProgress,
   getWeeksRemaining,
 } from '@/utils/pregnancy-calculations';
+import { getPregnancyRiskDisplay } from '@/utils/pregnancy-risk';
 
 export type PatientDashboardData = {
   firstName: string;
@@ -65,7 +66,8 @@ export function getPatientDashboardData(): PatientDashboardData | null {
 
   const metrics = calculatePregnancyMetrics(profile.lmpDate);
   const bmi = calculateBmi(profile.heightCm, profile.weightKg);
-  const isHighRisk = profile.riskStatus === 'High Risk';
+  const pregnancyRisk = getPregnancyRiskDisplay();
+  const isHighRisk = pregnancyRisk.status === 'High Risk';
 
   return {
     firstName: getPatientDisplayName(),
@@ -78,7 +80,7 @@ export function getPatientDashboardData(): PatientDashboardData | null {
     weeksRemaining: getWeeksRemaining(metrics),
     progressPercent: getPregnancyProgress(metrics),
     riskStatus: isHighRisk ? 'High Risk' : 'Low Risk',
-    riskReason: isHighRisk ? 'Existing medical condition detected.' : null,
+    riskReason: isHighRisk ? pregnancyRisk.reason : null,
     bmi: bmi !== null ? bmi.toString() : '—',
     currentWeight: `${profile.weightKg} kg`,
     bloodGroup: profile.bloodGroup ?? 'Not provided',
@@ -100,6 +102,6 @@ export function getPregnancySummaryDisplay(): PregnancySummaryDisplay {
     progressPercent: data.progressPercent,
     riskStatus: data.riskStatus,
     riskReason: data.riskReason,
-    lowRiskMessage: 'No current pregnancy risks detected.',
+    lowRiskMessage: getPregnancyRiskDisplay().reason,
   };
 }

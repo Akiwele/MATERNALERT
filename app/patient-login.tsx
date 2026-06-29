@@ -15,8 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthScreenHeader } from '@/components/auth-screen-header';
 import { AuthTextField } from '@/components/auth-text-field';
 import { AuthTextLink } from '@/components/auth-text-link';
+import { DevAccountTypeResetLink } from '@/components/dev-account-type-reset-link';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
+import { setAuthSession } from '@/utils/auth-session-storage';
 import { validateEmail, validatePassword } from '@/utils/form-validation';
 
 function useResponsiveSpacing(screenHeight: number) {
@@ -68,7 +70,7 @@ export default function PatientLoginScreen() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({ email: '', password: '' });
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
 
@@ -81,6 +83,7 @@ export default function PatientLoginScreen() {
       return;
     }
 
+    await setAuthSession('patient');
     router.replace('/patient-dashboard');
   };
 
@@ -169,6 +172,8 @@ export default function PatientLoginScreen() {
               onPress={() => router.push('/patient-sign-up')}
             />
           </View>
+
+          <DevAccountTypeResetLink />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

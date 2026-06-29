@@ -14,8 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthScreenHeader } from '@/components/auth-screen-header';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
-
-const CLINIC_APPLICATION_URL = 'http://10.5.50.232:5173/apply';
+import { CLINIC_APPLICATION_URL } from '@/constants/clinic-application';
 
 const APPLICATION_STEPS = [
   'Prepare your valid HeFRA licence.',
@@ -51,8 +50,18 @@ export default function FacilityRegistrationInfoScreen() {
   const { height: screenHeight } = useWindowDimensions();
   const spacing = useResponsiveSpacing(screenHeight);
 
-  const handleApplyForAccess = () => {
-    Linking.openURL(CLINIC_APPLICATION_URL);
+  const handleApplyForAccess = async () => {
+    try {
+      const supported = await Linking.canOpenURL(CLINIC_APPLICATION_URL);
+
+      if (supported) {
+        await Linking.openURL(CLINIC_APPLICATION_URL);
+      } else {
+        console.error('Cannot open clinic application URL:', CLINIC_APPLICATION_URL);
+      }
+    } catch (error) {
+      console.error('Failed to open clinic application URL:', error);
+    }
   };
 
   return (

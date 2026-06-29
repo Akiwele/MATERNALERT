@@ -15,8 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthScreenHeader } from '@/components/auth-screen-header';
 import { AuthTextField } from '@/components/auth-text-field';
 import { AuthTextLink } from '@/components/auth-text-link';
+import { DevAccountTypeResetLink } from '@/components/dev-account-type-reset-link';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
+import { setAuthSession } from '@/utils/auth-session-storage';
 import { validateEmail, validatePassword, validateRequired } from '@/utils/form-validation';
 
 function useResponsiveSpacing(screenHeight: number) {
@@ -73,7 +75,7 @@ export default function ClinicLoginScreen() {
     password: '',
   });
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const registrationNumberError = validateRequired(
       registrationNumber,
       'Clinic Registration Number',
@@ -91,6 +93,7 @@ export default function ClinicLoginScreen() {
       return;
     }
 
+    await setAuthSession('clinic');
     router.replace('/clinic-dashboard');
   };
 
@@ -192,6 +195,8 @@ export default function ClinicLoginScreen() {
               onPress={() => router.push('/facility-registration-info')}
             />
           </View>
+
+          <DevAccountTypeResetLink />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

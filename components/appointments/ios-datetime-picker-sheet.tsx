@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 
 import type { IosPickerRequest } from './appointment-picker-field';
 
@@ -99,16 +100,16 @@ const styles = StyleSheet.create({
     backgroundColor: BrandColors.white,
   },
   toolbarTitle: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.bodySmall,
     fontWeight: '600',
     color: BrandColors.text,
   },
   cancelText: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.bodySmall,
     color: BrandColors.textSecondary,
   },
   doneText: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.bodySmall,
     fontWeight: '600',
     color: BrandColors.primary,
   },

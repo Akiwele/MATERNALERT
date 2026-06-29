@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import type { AppointmentStatus } from '@/utils/appointments';
 
 type AppointmentStatusBadgeProps = {
@@ -57,7 +58,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   label: {
-    fontSize: 12,
+    fontSize: PatientDashboardTypography.caption,
     fontWeight: '700',
   },
 });

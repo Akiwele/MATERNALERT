@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppointmentStatusBadge } from '@/components/appointments/appointment-status-badge';
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import {
   formatAppointmentDate,
   formatAppointmentTime,
@@ -81,10 +82,10 @@ const styles = StyleSheet.create({
   },
   clinicName: {
     flex: 1,
-    fontSize: 16,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '700',
     color: BrandColors.text,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   detailRow: {
     flexDirection: 'row',
@@ -93,16 +94,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     color: BrandColors.textSecondary,
   },
   detailValue: {
     flex: 1,
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.text,
     textAlign: 'right',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   notesBlock: {
     gap: 4,
@@ -111,8 +112,8 @@ const styles = StyleSheet.create({
     borderTopColor: BrandColors.border,
   },
   notesText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: PatientDashboardTypography.label,
+    lineHeight: 22,
     color: BrandColors.text,
   },
   completeButton: {
@@ -128,7 +129,7 @@ const styles = StyleSheet.create({
     opacity: 0.88,
   },
   completeButtonText: {
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.primaryDark,
   },

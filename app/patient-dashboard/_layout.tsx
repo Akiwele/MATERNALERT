@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppointmentsProvider } from '@/contexts/appointments-context';
 import { HealthProvider } from '@/contexts/health-context';
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 
 const TAB_BAR_CONTENT_HEIGHT = 70;
 const TAB_BAR_CORNER_RADIUS = 14;
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   tabBarLabel: {
-    fontSize: 10,
+    fontSize: PatientDashboardTypography.tabLabel,
     fontWeight: '600',
     marginTop: 2,
     includeFontPadding: false,

@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 
 type DashboardCardProps = {
   title: string;
@@ -51,7 +52,7 @@ const styles = StyleSheet.create({
     backgroundColor: BrandColors.primaryMuted,
   },
   title: {
-    fontSize: 17,
+    fontSize: PatientDashboardTypography.cardTitle,
     fontWeight: '700',
     color: BrandColors.text,
   },
@@ -63,11 +64,11 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
-    fontSize: 14,
+    fontSize: PatientDashboardTypography.label,
     color: BrandColors.textSecondary,
   },
   value: {
-    fontSize: 15,
+    fontSize: PatientDashboardTypography.body,
     fontWeight: '600',
     color: BrandColors.text,
     textAlign: 'right',

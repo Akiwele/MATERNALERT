@@ -23,6 +23,7 @@ import {
   updatePatientRegistration,
 } from '@/stores/patient-registration';
 import { getPatientProfile, updatePatientProfile } from '@/stores/patient-profile';
+import { syncPatientToCareNetwork } from '@/utils/sync-patient-care-network';
 import {
   validateFullName,
   validateGhanaPhoneNumber,
@@ -65,6 +66,8 @@ export default function EditPersonalInfoScreen() {
       dateOfBirth,
       bloodGroup,
     });
+
+    syncPatientToCareNetwork();
 
     router.back();
   };
