@@ -30,6 +30,12 @@ const STATUS_STYLES: Record<
     textColor: '#047857',
     label: 'Completed',
   },
+  reschedule_requested: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+    textColor: '#B45309',
+    label: 'Reschedule Requested',
+  },
 };
 
 export function AppointmentStatusBadge({ status }: AppointmentStatusBadgeProps) {

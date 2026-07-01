@@ -12,7 +12,7 @@ type ClinicPatientSearchBarProps = {
 export function ClinicPatientSearchBar({
   value,
   onChangeText,
-  placeholder = 'Search by name, phone, or ANC book number',
+  placeholder = 'Search by name, phone number, or email...',
 }: ClinicPatientSearchBarProps) {
   return (
     <View style={styles.container}>

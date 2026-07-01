@@ -1,11 +1,12 @@
 /**
  * Shared pregnancy record visible across verified clinics.
- * Identified by name, phone, and optional ANC book number — not a clinic-specific ID.
+ * Identified by name, phone, and email — not a clinic-specific ID.
  */
 export type CareNetworkPatient = {
   id: string;
   fullName: string;
   phoneNumber: string;
+  emailAddress: string;
   ancBookNumber?: string;
   registeredClinicName: string;
   currentWeek?: number;

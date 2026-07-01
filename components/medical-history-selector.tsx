@@ -42,13 +42,10 @@ export function MedicalHistorySelector({
 
       {isOtherSelected ? (
         <AuthTextField
-          label="Specify other condition"
-          placeholder="Describe other health conditions"
+          label="Please specify condition"
+          placeholder="Enter medical condition"
           value={otherDetails}
           onChangeText={onOtherDetailsChange}
-          multiline
-          numberOfLines={3}
-          style={styles.otherInput}
         />
       ) : null}
     </View>
@@ -94,9 +91,5 @@ const styles = StyleSheet.create({
   chipTextSelected: {
     color: BrandColors.primaryDark,
     fontWeight: '600',
-  },
-  otherInput: {
-    minHeight: 88,
-    textAlignVertical: 'top',
   },
 });

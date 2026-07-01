@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -8,12 +8,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppointmentPickerField } from '@/components/appointments/appointment-picker-field';
 import { AppointmentTypeSelector } from '@/components/appointments/appointment-type-selector';
+import { ClinicPatientPicker } from '@/components/clinic/clinic-patient-picker';
 import { PrimaryButton } from '@/components/primary-button';
 import type { AppointmentType } from '@/constants/appointment-types';
 import { BrandColors } from '@/constants/brand';
@@ -21,17 +23,22 @@ import { useClinicData } from '@/contexts/clinic-data-context';
 
 export default function AddAppointmentScreen() {
   const router = useRouter();
-  const { patientId } = useLocalSearchParams<{ patientId: string }>();
-  const { getPatientById, addAppointment } = useClinicData();
+  const { patientId: initialPatientId } = useLocalSearchParams<{ patientId?: string }>();
+  const { getPatientById, getAccessiblePatients, addAppointment } = useClinicData();
 
-  const patient = patientId ? getPatientById(patientId) : undefined;
+  const accessiblePatients = useMemo(() => getAccessiblePatients(), [getAccessiblePatients]);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
+    initialPatientId ?? null,
+  );
+  const patient = selectedPatientId ? getPatientById(selectedPatientId) : undefined;
   const [appointmentDate, setAppointmentDate] = useState<Date | null>(null);
   const [appointmentTime, setAppointmentTime] = useState<Date | null>(null);
   const [visitType, setVisitType] = useState<AppointmentType | null>(null);
+  const [notes, setNotes] = useState('');
 
   const handleSave = () => {
     if (!patient || !appointmentDate || !appointmentTime || !visitType) {
-      Alert.alert('Missing information', 'Please complete all appointment fields.');
+      Alert.alert('Missing information', 'Please complete all required appointment fields.');
       return;
     }
 
@@ -43,25 +50,12 @@ export default function AddAppointmentScreen() {
       0,
     );
 
-    addAppointment(patient.id, appointmentDate, scheduledTime, visitType);
+    addAppointment(patient.id, appointmentDate, scheduledTime, visitType, notes);
 
     Alert.alert('Appointment added', `Appointment scheduled for ${patient.fullName}.`, [
       { text: 'OK', onPress: () => router.back() },
     ]);
   };
-
-  if (!patient) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <Pressable style={styles.closeButton} onPress={() => router.back()}>
-          <Text style={styles.closeButtonText}>Close</Text>
-        </Pressable>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Patient not found</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   const today = new Date();
 
@@ -82,8 +76,18 @@ export default function AddAppointmentScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          <Text style={styles.patientName}>{patient.fullName}</Text>
-          <Text style={styles.patientMeta}>{patient.phoneNumber}</Text>
+          {initialPatientId && patient ? (
+            <>
+              <Text style={styles.patientName}>{patient.fullName}</Text>
+              <Text style={styles.patientMeta}>{patient.phoneNumber}</Text>
+            </>
+          ) : (
+            <ClinicPatientPicker
+              patients={accessiblePatients}
+              selectedPatientId={selectedPatientId}
+              onSelect={setSelectedPatientId}
+            />
+          )}
 
           <AppointmentPickerField
             mode="date"
@@ -101,6 +105,20 @@ export default function AddAppointmentScreen() {
           />
 
           <AppointmentTypeSelector selectedType={visitType} onSelect={setVisitType} />
+
+          <View style={styles.notesField}>
+            <Text style={styles.notesLabel}>Notes (optional)</Text>
+            <TextInput
+              style={styles.notesInput}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="e.g. Bring ANC book and lab results"
+              placeholderTextColor={BrandColors.textSecondary}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </View>
 
           <PrimaryButton label="Save Appointment" onPress={handleSave} />
         </ScrollView>
@@ -134,10 +152,6 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 52,
   },
-  closeButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
   closeButtonText: {
     fontSize: 15,
     fontWeight: '600',
@@ -159,14 +173,23 @@ const styles = StyleSheet.create({
     color: BrandColors.textSecondary,
     marginBottom: 4,
   },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  notesField: {
+    gap: 8,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+  notesLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: BrandColors.text,
+  },
+  notesInput: {
+    minHeight: 88,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: BrandColors.border,
+    backgroundColor: BrandColors.white,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
     color: BrandColors.text,
   },
 });

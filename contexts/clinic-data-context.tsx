@@ -1,11 +1,20 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 
 import { MOCK_CLINIC_SESSION } from '@/constants/clinic-session';
+import { MOCK_CLINIC_ACTIVITIES, MOCK_CLINIC_PATIENTS } from '@/constants/mock-clinic-data';
 import {
-  MOCK_CLINIC_ACTIVITIES,
-  MOCK_CLINIC_APPOINTMENTS,
-  MOCK_CLINIC_PATIENTS,
-} from '@/constants/mock-clinic-data';
+  getAncAppointments,
+  subscribeAncAppointments,
+  updateAncAppointments,
+} from '@/stores/anc-appointments-store';
 import type {
   ClinicActivity,
   ClinicAppointment,
@@ -15,6 +24,10 @@ import type {
   RecordVisitInput,
   RiskLevel,
 } from '@/types/clinic-records';
+import {
+  deriveRiskStatusFromReasons,
+  getMissedAncRiskReasons,
+} from '@/utils/anc-risk-rules';
 import { clinicHasPatientAccess } from '@/utils/clinic-access';
 import {
   isFutureDay,
@@ -33,6 +46,7 @@ type ClinicDataContextValue = {
   todaysAppointments: ClinicAppointment[];
   upcomingAppointments: ClinicAppointment[];
   missedAppointments: ClinicAppointment[];
+  rescheduleRequestedAppointments: ClinicAppointment[];
   highRiskAlerts: HighRiskAlert[];
   getPatientById: (patientId: string) => ClinicPatientRecord | undefined;
   getAccessiblePatientById: (patientId: string) => ClinicPatientRecord | undefined;
@@ -45,6 +59,7 @@ type ClinicDataContextValue = {
     date: Date,
     time: Date,
     visitType: ClinicAppointment['visitType'],
+    notes?: string,
   ) => void;
   markAppointmentAttended: (appointmentId: string) => void;
   markAppointmentMissed: (appointmentId: string) => void;
@@ -65,13 +80,33 @@ function createAppointmentId(): string {
   return `appt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-function deriveRiskStatus(patient: ClinicPatientRecord): RiskLevel {
-  return patient.riskReasons.length > 0 ? 'High Risk' : 'Low Risk';
+function useAncAppointmentsSnapshot(): ClinicAppointment[] {
+  return useSyncExternalStore(subscribeAncAppointments, getAncAppointments, getAncAppointments);
+}
+
+function syncPatientMissedAncRisk(
+  patients: ClinicPatientRecord[],
+  patientId: string,
+  patientAppointments: ClinicAppointment[],
+): ClinicPatientRecord[] {
+  return patients.map((patient) => {
+    if (patient.id !== patientId) {
+      return patient;
+    }
+
+    const riskReasons = getMissedAncRiskReasons(patientAppointments, patient.riskReasons);
+
+    return {
+      ...patient,
+      riskReasons,
+      riskStatus: deriveRiskStatusFromReasons(riskReasons),
+    };
+  });
 }
 
 export function ClinicDataProvider({ children }: { children: ReactNode }) {
   const [patients, setPatients] = useState<ClinicPatientRecord[]>(MOCK_CLINIC_PATIENTS);
-  const [appointments, setAppointments] = useState<ClinicAppointment[]>(MOCK_CLINIC_APPOINTMENTS);
+  const appointments = useAncAppointmentsSnapshot();
   const [activities, setActivities] = useState<ClinicActivity[]>(MOCK_CLINIC_ACTIVITIES);
 
   const clinicName = MOCK_CLINIC_SESSION.name;
@@ -99,7 +134,7 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
         id: patient.id,
         fullName: patient.fullName,
         phoneNumber: patient.phoneNumber,
-        ancBookNumber: patient.ancBookNumber,
+        emailAddress: patient.emailAddress,
         registeredClinicName: patient.registeredClinicName,
         currentWeek: patient.currentWeek,
         riskStatus: patient.riskStatus,
@@ -126,7 +161,11 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
   const todaysAppointments = useMemo(
     () =>
       appointments
-        .filter((appointment) => isToday(appointment.date) && appointment.status === 'scheduled')
+        .filter(
+          (appointment) =>
+            isToday(appointment.date) &&
+            (appointment.status === 'scheduled' || appointment.status === 'reschedule_requested'),
+        )
         .sort((left, right) => left.time.getTime() - right.time.getTime()),
     [appointments],
   );
@@ -136,7 +175,8 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
       appointments
         .filter(
           (appointment) =>
-            appointment.status === 'scheduled' && isFutureDay(appointment.date),
+            (appointment.status === 'scheduled' || appointment.status === 'rescheduled') &&
+            isFutureDay(appointment.date),
         )
         .sort((left, right) => left.date.getTime() - right.date.getTime()),
     [appointments],
@@ -147,6 +187,14 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
       appointments
         .filter((appointment) => appointment.status === 'missed')
         .sort((left, right) => right.date.getTime() - left.date.getTime()),
+    [appointments],
+  );
+
+  const rescheduleRequestedAppointments = useMemo(
+    () =>
+      appointments
+        .filter((appointment) => appointment.status === 'reschedule_requested')
+        .sort((left, right) => left.date.getTime() - right.date.getTime()),
     [appointments],
   );
 
@@ -237,7 +285,7 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
             ? { valueKg: input.weightKg, recordedAt: input.visitDate }
             : patient.recentWeight,
         riskReasons: nextRiskReasons,
-        riskStatus: deriveRiskStatus({ ...patient, riskReasons: nextRiskReasons }),
+        riskStatus: deriveRiskStatusFromReasons(nextRiskReasons),
         visits: [visit, ...patient.visits],
       };
 
@@ -272,7 +320,7 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
           status: 'scheduled',
         };
 
-        setAppointments((current) => [newAppointment, ...current]);
+        updateAncAppointments((current) => [newAppointment, ...current]);
         prependActivity({
           type: 'appointment_added',
           message: `Next appointment added for ${patient.fullName}`,
@@ -288,6 +336,7 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
       date: Date,
       time: Date,
       visitType: ClinicAppointment['visitType'],
+      notes?: string,
     ) => {
       const patient = patients.find((entry) => entry.id === patientId);
 
@@ -304,33 +353,31 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
         time,
         visitType,
         status: 'scheduled',
+        notes: notes?.trim() || undefined,
       };
 
-      setAppointments((current) => [newAppointment, ...current]);
+      updateAncAppointments((current) => [newAppointment, ...current]);
       prependActivity({
         type: 'appointment_added',
-        message: `Next appointment added for ${patient.fullName}`,
+        message: `ANC appointment scheduled for ${patient.fullName}`,
       });
     },
     [patients, prependActivity],
   );
 
-  const markAppointmentAttended = useCallback(
-    (appointmentId: string) => {
-      setAppointments((current) =>
-        current.map((appointment) =>
-          appointment.id === appointmentId ? { ...appointment, status: 'attended' } : appointment,
-        ),
-      );
-    },
-    [],
-  );
+  const markAppointmentAttended = useCallback((appointmentId: string) => {
+    updateAncAppointments((current) =>
+      current.map((appointment) =>
+        appointment.id === appointmentId ? { ...appointment, status: 'attended' } : appointment,
+      ),
+    );
+  }, []);
 
   const markAppointmentMissed = useCallback(
     (appointmentId: string) => {
       const appointment = appointments.find((entry) => entry.id === appointmentId);
 
-      setAppointments((current) =>
+      updateAncAppointments((current) =>
         current.map((entry) =>
           entry.id === appointmentId ? { ...entry, status: 'missed' } : entry,
         ),
@@ -342,38 +389,41 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
           message: `Missed appointment flagged for ${appointment.patientName}`,
         });
 
+        const patientAppointments = appointments
+          .map((entry) =>
+            entry.id === appointmentId ? { ...entry, status: 'missed' as const } : entry,
+          )
+          .filter((entry) => entry.patientId === appointment.patientId);
+
         setPatients((current) =>
-          current.map((patient) => {
-            if (patient.id !== appointment.patientId) {
-              return patient;
-            }
-
-            const missedReason = 'Missed ANC visit';
-            const nextRiskReasons = patient.riskReasons.includes(missedReason)
-              ? patient.riskReasons
-              : [...patient.riskReasons, missedReason];
-
-            return {
-              ...patient,
-              riskReasons: nextRiskReasons,
-              riskStatus: deriveRiskStatus({ ...patient, riskReasons: nextRiskReasons }),
-            };
-          }),
+          syncPatientMissedAncRisk(current, appointment.patientId, patientAppointments),
         );
       }
     },
     [appointments, prependActivity],
   );
 
-  const rescheduleAppointment = useCallback((appointmentId: string, date: Date, time: Date) => {
-    setAppointments((current) =>
-      current.map((appointment) =>
-        appointment.id === appointmentId
-          ? { ...appointment, date, time, status: 'scheduled' }
-          : appointment,
-      ),
-    );
-  }, []);
+  const rescheduleAppointment = useCallback(
+    (appointmentId: string, date: Date, time: Date) => {
+      const appointment = appointments.find((entry) => entry.id === appointmentId);
+
+      updateAncAppointments((current) =>
+        current.map((entry) =>
+          entry.id === appointmentId
+            ? { ...entry, date, time, status: 'scheduled' }
+            : entry,
+        ),
+      );
+
+      if (appointment) {
+        prependActivity({
+          type: 'appointment_added',
+          message: `Appointment rescheduled for ${appointment.patientName}`,
+        });
+      }
+    },
+    [appointments, prependActivity],
+  );
 
   const value = useMemo<ClinicDataContextValue>(
     () => ({
@@ -385,6 +435,7 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
       todaysAppointments,
       upcomingAppointments,
       missedAppointments,
+      rescheduleRequestedAppointments,
       highRiskAlerts,
       getPatientById,
       getAccessiblePatientById,
@@ -406,6 +457,7 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
       todaysAppointments,
       upcomingAppointments,
       missedAppointments,
+      rescheduleRequestedAppointments,
       highRiskAlerts,
       getPatientById,
       getAccessiblePatientById,

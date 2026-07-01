@@ -1,4 +1,3 @@
-import { Bell } from 'lucide-react-native';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -8,16 +7,14 @@ import { PatientDashboardTypography } from '@/constants/patient-dashboard-typogr
 const PROGRESS_CIRCLE_SIZE = 64;
 const PROGRESS_RADIUS = 27;
 const PROGRESS_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_RADIUS;
-const AVATAR_SIZE = 28;
-const HEADER_ACTION_SIZE = 36;
+const PROFILE_AVATAR_SIZE = 40;
 
 type PatientHomeHeroProps = {
   initials: string;
   firstName: string;
   currentWeek: number;
   dueDate: string;
-  showBpAlert: boolean;
-  onNotificationsPress?: () => void;
+  onProfilePress?: () => void;
 };
 
 export function PatientHomeHero({
@@ -25,8 +22,7 @@ export function PatientHomeHero({
   firstName,
   currentWeek,
   dueDate,
-  showBpAlert,
-  onNotificationsPress,
+  onProfilePress,
 }: PatientHomeHeroProps) {
   const weekProgress = Math.min(currentWeek / 40, 1);
   const strokeDashoffset = PROGRESS_CIRCUMFERENCE * (1 - weekProgress);
@@ -34,24 +30,20 @@ export function PatientHomeHero({
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <View style={styles.identityRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <View style={styles.nameWrap}>
-            <Text style={styles.nameText} numberOfLines={1}>
-              {firstName}
-            </Text>
-          </View>
+        <View style={styles.nameWrap}>
+          <Text style={styles.nameText} numberOfLines={1}>
+            {firstName}
+          </Text>
         </View>
 
         <Pressable
-          style={styles.bellButton}
-          onPress={onNotificationsPress}
+          style={({ pressed }) => [styles.profileAvatarButton, pressed && styles.profileAvatarPressed]}
+          onPress={onProfilePress}
           accessibilityRole="button"
-          accessibilityLabel="Notifications">
-          <Bell size={20} color="rgba(255,255,255,0.8)" />
-          {showBpAlert ? <View style={styles.alertDot} /> : null}
+          accessibilityLabel="Open profile">
+          <View style={styles.profileAvatar}>
+            <Text style={styles.profileAvatarText}>{initials}</Text>
+          </View>
         </Pressable>
       </View>
 
@@ -109,32 +101,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  identityRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    minWidth: 0,
-    paddingRight: 12,
-  },
-  avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: BrandColors.white,
-    fontSize: PatientDashboardTypography.captionSmall,
-    fontWeight: '600',
-    includeFontPadding: false,
-    textAlignVertical: 'center',
+    gap: 12,
   },
   nameWrap: {
-    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
   },
   nameText: {
@@ -148,23 +119,28 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
-  bellButton: {
-    position: 'relative',
-    width: HEADER_ACTION_SIZE,
-    height: HEADER_ACTION_SIZE,
+  profileAvatarButton: {
+    flexShrink: 0,
+  },
+  profileAvatarPressed: {
+    opacity: 0.88,
+  },
+  profileAvatar: {
+    width: PROFILE_AVATAR_SIZE,
+    height: PROFILE_AVATAR_SIZE,
+    borderRadius: PROFILE_AVATAR_SIZE / 2,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  alertDot: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#FB7185',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+  profileAvatarText: {
+    color: BrandColors.white,
+    fontSize: PatientDashboardTypography.caption,
+    fontWeight: '700',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   progressCard: {
     marginTop: 10,

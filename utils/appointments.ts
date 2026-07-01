@@ -1,6 +1,11 @@
 import type { AppointmentType } from '@/constants/appointment-types';
+import type { ClinicAppointmentStatus } from '@/types/clinic-records';
 
-export type AppointmentStatus = 'upcoming' | 'missed' | 'completed';
+export type AppointmentStatus =
+  | 'upcoming'
+  | 'missed'
+  | 'completed'
+  | 'reschedule_requested';
 
 export type AntenatalAppointment = {
   id: string;
@@ -9,10 +14,8 @@ export type AntenatalAppointment = {
   appointmentTime: string;
   appointmentType: AppointmentType;
   notes?: string;
-  completed: boolean;
+  clinicalStatus: ClinicAppointmentStatus;
 };
-
-export type AntenatalAppointmentInput = Omit<AntenatalAppointment, 'id' | 'completed'>;
 
 function startOfDay(date: Date): Date {
   const normalized = new Date(date);
@@ -28,18 +31,26 @@ export function getAppointmentDateTime(appointment: AntenatalAppointment): Date 
 }
 
 export function getAppointmentStatus(appointment: AntenatalAppointment): AppointmentStatus {
-  if (appointment.completed) {
+  if (appointment.clinicalStatus === 'attended') {
     return 'completed';
+  }
+
+  if (appointment.clinicalStatus === 'missed') {
+    return 'missed';
+  }
+
+  if (appointment.clinicalStatus === 'reschedule_requested') {
+    return 'reschedule_requested';
   }
 
   const today = startOfDay(new Date());
   const appointmentDay = startOfDay(new Date(appointment.appointmentDate));
 
-  if (appointmentDay >= today) {
-    return 'upcoming';
+  if (appointmentDay < today) {
+    return 'missed';
   }
 
-  return 'missed';
+  return 'upcoming';
 }
 
 export function sortAppointmentsByDate(
@@ -58,7 +69,9 @@ export function getNextUpcomingAppointment(
 
   return (
     sortAppointmentsByDate(appointments).find((appointment) => {
-      if (appointment.completed) {
+      const status = getAppointmentStatus(appointment);
+
+      if (status !== 'upcoming' && status !== 'reschedule_requested') {
         return false;
       }
 

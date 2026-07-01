@@ -19,7 +19,7 @@ import { DevAccountTypeResetLink } from '@/components/dev-account-type-reset-lin
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
 import { setAuthSession } from '@/utils/auth-session-storage';
-import { validateEmail, validatePassword, validateRequired } from '@/utils/form-validation';
+import { validateEmail, validatePassword } from '@/utils/form-validation';
 
 function useResponsiveSpacing(screenHeight: number) {
   return useMemo(() => {
@@ -66,30 +66,23 @@ export default function ClinicLoginScreen() {
   const router = useRouter();
   const { height: screenHeight } = useWindowDimensions();
   const spacing = useResponsiveSpacing(screenHeight);
-  const [registrationNumber, setRegistrationNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({
-    registrationNumber: '',
     email: '',
     password: '',
   });
 
   const handleLogin = async () => {
-    const registrationNumberError = validateRequired(
-      registrationNumber,
-      'Clinic Registration Number',
-    );
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
 
     setErrors({
-      registrationNumber: registrationNumberError ?? '',
       email: emailError ?? '',
       password: passwordError ?? '',
     });
 
-    if (registrationNumberError || emailError || passwordError) {
+    if (emailError || passwordError) {
       return;
     }
 
@@ -135,21 +128,7 @@ export default function ClinicLoginScreen() {
             ]}>
             <View style={[styles.fields, { gap: spacing.fieldGap }]}>
               <AuthTextField
-                label="Clinic Registration Number"
-                placeholder="Enter clinic registration number"
-                value={registrationNumber}
-                onChangeText={(value) => {
-                  setRegistrationNumber(value);
-                  if (errors.registrationNumber) {
-                    setErrors((current) => ({ ...current, registrationNumber: '' }));
-                  }
-                }}
-                autoCapitalize="characters"
-                error={errors.registrationNumber || undefined}
-              />
-
-              <AuthTextField
-                label="Clinic Email"
+                label="Official Email"
                 placeholder="clinic@example.com"
                 value={email}
                 onChangeText={(value) => {

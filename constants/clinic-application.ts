@@ -10,4 +10,4 @@
  * - Change the fallback below to match Vite's Network URL.
  */
 export const CLINIC_APPLICATION_URL =
-  process.env.EXPO_PUBLIC_CLINIC_APPLICATION_URL ?? 'http://172.20.10.5:5174/apply';
+  process.env.EXPO_PUBLIC_CLINIC_APPLICATION_URL ?? 'http://172.20.10.5:5173/apply';

@@ -8,6 +8,7 @@ import { HealthRecordCard } from '@/components/health/health-record-card';
 import {
   LogHealthRecordModal,
   type HealthLogFocusSection,
+  type LogHealthRecordModalMode,
 } from '@/components/health/log-health-record-modal';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
@@ -34,16 +35,21 @@ const HEALTH_ACTIONS: {
 export default function PatientHealthScreen() {
   const { records, medications, summary, saveHealthRecord } = useHealth();
   const [isLogModalVisible, setIsLogModalVisible] = useState(false);
-  const [logFocusSection, setLogFocusSection] = useState<HealthLogFocusSection | null>(null);
+  const [logModalMode, setLogModalMode] = useState<LogHealthRecordModalMode>('full');
 
-  const openLogModal = (section?: HealthLogFocusSection) => {
-    setLogFocusSection(section ?? null);
+  const openFullLogModal = () => {
+    setLogModalMode('full');
+    setIsLogModalVisible(true);
+  };
+
+  const openQuickActionModal = (section: HealthLogFocusSection) => {
+    setLogModalMode(section);
     setIsLogModalVisible(true);
   };
 
   const closeLogModal = () => {
     setIsLogModalVisible(false);
-    setLogFocusSection(null);
+    setLogModalMode('full');
   };
 
   return (
@@ -74,7 +80,7 @@ export default function PatientHealthScreen() {
           </View>
         </View>
 
-        <PrimaryButton label="Log Health Record" onPress={() => openLogModal()} />
+        <PrimaryButton label="Log Health Record" onPress={openFullLogModal} />
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Health Actions</Text>
@@ -84,7 +90,7 @@ export default function PatientHealthScreen() {
                 key={action.id}
                 label={action.label}
                 icon={action.icon}
-                onPress={() => openLogModal(action.id)}
+                onPress={() => openQuickActionModal(action.id)}
               />
             ))}
           </View>
@@ -124,7 +130,6 @@ export default function PatientHealthScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>No health records yet.</Text>
-              <PrimaryButton label="Log Health Record" onPress={() => openLogModal()} />
             </View>
           )}
         </View>
@@ -132,7 +137,7 @@ export default function PatientHealthScreen() {
 
       <LogHealthRecordModal
         visible={isLogModalVisible}
-        initialSection={logFocusSection}
+        mode={logModalMode}
         initialWeight={summary.currentWeightKg}
         onClose={closeLogModal}
         onSave={saveHealthRecord}
@@ -252,7 +257,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BrandColors.border,
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'center',
   },
   emptyText: {
     fontSize: PatientDashboardTypography.body,

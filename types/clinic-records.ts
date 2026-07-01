@@ -2,7 +2,12 @@ import type { AppointmentType } from '@/constants/appointment-types';
 
 export type RiskLevel = 'Low Risk' | 'High Risk';
 
-export type ClinicAppointmentStatus = 'scheduled' | 'attended' | 'missed';
+export type ClinicAppointmentStatus =
+  | 'scheduled'
+  | 'attended'
+  | 'missed'
+  | 'reschedule_requested'
+  | 'rescheduled';
 
 export type ClinicAppointment = {
   id: string;
@@ -13,6 +18,7 @@ export type ClinicAppointment = {
   time: Date;
   visitType: AppointmentType;
   status: ClinicAppointmentStatus;
+  notes?: string;
 };
 
 export type ClinicVisit = {
@@ -33,7 +39,8 @@ export type ClinicActivityType =
   | 'visit_recorded'
   | 'appointment_added'
   | 'high_bp_alert'
-  | 'appointment_missed';
+  | 'appointment_missed'
+  | 'reschedule_requested';
 
 export type ClinicActivity = {
   id: string;
@@ -59,6 +66,7 @@ export type ClinicPatientRecord = {
   id: string;
   fullName: string;
   phoneNumber: string;
+  emailAddress: string;
   ancBookNumber?: string;
   registeredClinicName: string;
   lmpDate: Date;

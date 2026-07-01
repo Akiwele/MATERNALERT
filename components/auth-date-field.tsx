@@ -1,9 +1,11 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { CalendarDays } from 'lucide-react-native';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandColors } from '@/constants/brand';
+import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import { formatDisplayDate } from '@/utils/pregnancy-calculations';
 
 type AuthDateFieldProps = {
@@ -23,51 +25,76 @@ export function AuthDateField({
   maximumDate,
   minimumDate,
 }: AuthDateFieldProps) {
-  const [showPicker, setShowPicker] = useState(false);
+  const insets = useSafeAreaInsets();
+  const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const [draftValue, setDraftValue] = useState(value ?? new Date());
 
-  const handleChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowPicker(false);
-    }
+  const openPicker = () => {
+    setDraftValue(value ?? new Date());
+    setIsPickerVisible(true);
+  };
 
-    if (event.type === 'dismissed') {
-      setShowPicker(false);
-      return;
-    }
+  const closePicker = () => {
+    setIsPickerVisible(false);
+  };
 
+  const handleChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
     if (selectedDate) {
-      onChange(selectedDate);
+      setDraftValue(selectedDate);
     }
+  };
+
+  const handleConfirm = () => {
+    onChange(draftValue);
+    closePicker();
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
 
-      <Pressable style={styles.selector} onPress={() => setShowPicker(true)}>
+      <Pressable style={styles.selector} onPress={openPicker}>
         <Text style={[styles.selectorText, !value && styles.placeholder]}>
           {value ? formatDisplayDate(value) : placeholder}
         </Text>
         <CalendarDays size={20} color={BrandColors.primary} />
       </Pressable>
 
-      {showPicker ? (
-        <View style={styles.pickerContainer}>
-          <DateTimePicker
-            value={value ?? new Date()}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={handleChange}
-            maximumDate={maximumDate}
-            minimumDate={minimumDate}
-          />
-          {Platform.OS === 'ios' ? (
-            <Pressable style={styles.doneButton} onPress={() => setShowPicker(false)}>
-              <Text style={styles.doneButtonText}>Done</Text>
-            </Pressable>
-          ) : null}
+      <Modal
+        visible={isPickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closePicker}>
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.backdrop} onPress={closePicker} />
+
+          <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <View style={styles.toolbar}>
+              <Pressable onPress={closePicker} hitSlop={8}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+              <Text style={styles.toolbarTitle}>Select Date</Text>
+              <Pressable onPress={handleConfirm} hitSlop={8}>
+                <Text style={styles.doneText}>Done</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.pickerContainer}>
+              <DateTimePicker
+                value={draftValue}
+                mode="date"
+                display="spinner"
+                themeVariant="light"
+                textColor={BrandColors.text}
+                accentColor={BrandColors.primary}
+                onChange={handleChange}
+                maximumDate={maximumDate}
+                minimumDate={minimumDate}
+              />
+            </View>
+          </View>
         </View>
-      ) : null}
+      </Modal>
     </View>
   );
 }
@@ -106,23 +133,48 @@ const styles = StyleSheet.create({
   placeholder: {
     color: BrandColors.textSecondary,
   },
-  pickerContainer: {
+  modalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.35)',
+  },
+  sheet: {
     backgroundColor: BrandColors.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: BrandColors.border,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     overflow: 'hidden',
   },
-  doneButton: {
+  toolbar: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: BrandColors.border,
-    backgroundColor: BrandColors.primaryMuted,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: BrandColors.border,
+    backgroundColor: BrandColors.white,
   },
-  doneButtonText: {
-    fontSize: 16,
+  toolbarTitle: {
+    fontSize: PatientDashboardTypography.bodySmall,
+    fontWeight: '600',
+    color: BrandColors.text,
+  },
+  cancelText: {
+    fontSize: PatientDashboardTypography.bodySmall,
+    color: BrandColors.textSecondary,
+  },
+  doneText: {
+    fontSize: PatientDashboardTypography.bodySmall,
     fontWeight: '600',
     color: BrandColors.primary,
+  },
+  pickerContainer: {
+    backgroundColor: BrandColors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
 });

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { BookOpen, Calendar, HeartPulse, Home, User } from 'lucide-react-native';
+import { BookOpen, Calendar, HeartPulse, Home } from 'lucide-react-native';
 import { Platform, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -85,8 +85,7 @@ export default function PatientDashboardLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: 'Profile',
-            tabBarIcon: ({ color }) => <User size={TAB_ICON_SIZE} color={color} />,
+            href: null,
           }}
         />
       </Tabs>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -10,12 +10,17 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthTextField } from '@/components/auth-text-field';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
-import { HEALTH_SYMPTOMS, type HealthSymptom } from '@/constants/health-symptoms';
+import {
+  HEALTH_SYMPTOMS,
+  isSymptomChipDisabled,
+  toggleHealthSymptom,
+  type HealthSymptom,
+} from '@/constants/health-symptoms';
 import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import type { SaveHealthRecordInput } from '@/types/health';
 import {
@@ -26,29 +31,42 @@ import {
 
 export type { HealthLogFocusSection };
 
+export type LogHealthRecordModalMode = 'full' | HealthLogFocusSection;
+
 type LogHealthRecordModalProps = {
   visible: boolean;
-  initialSection?: HealthLogFocusSection | null;
+  mode?: LogHealthRecordModalMode;
   initialWeight?: number | null;
   onClose: () => void;
   onSave: (input: SaveHealthRecordInput) => void;
 };
 
-type SectionKey = HealthLogFocusSection | 'generalNotes';
+const MODAL_TITLES: Record<LogHealthRecordModalMode, string> = {
+  full: 'Log Health Record',
+  bloodPressure: 'Log Blood Pressure',
+  weight: 'Log Weight',
+  symptoms: 'Log Symptoms',
+  medication: 'Log Medication',
+};
 
-function FormSection({
-  title,
-  children,
-  onLayout,
-}: {
-  title: string;
-  children: ReactNode;
-  onLayout?: (y: number) => void;
-}) {
+const SAVE_LABELS: Record<LogHealthRecordModalMode, string> = {
+  full: 'Save Health Record',
+  bloodPressure: 'Save Blood Pressure',
+  weight: 'Save Weight',
+  symptoms: 'Save Symptoms',
+  medication: 'Save Medication',
+};
+
+const EMPTY_MESSAGES: Record<HealthLogFocusSection, string> = {
+  bloodPressure: 'Enter your systolic and diastolic blood pressure before saving.',
+  weight: 'Enter your weight before saving.',
+  symptoms: 'Select at least one symptom before saving.',
+  medication: 'Enter medication details before saving.',
+};
+
+function FormSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <View
-      style={styles.section}
-      onLayout={(event) => onLayout?.(event.nativeEvent.layout.y)}>
+    <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <View style={styles.sectionBody}>{children}</View>
     </View>
@@ -57,13 +75,11 @@ function FormSection({
 
 export function LogHealthRecordModal({
   visible,
-  initialSection = null,
+  mode = 'full',
   initialWeight = null,
   onClose,
   onSave,
 }: LogHealthRecordModalProps) {
-  const scrollRef = useRef<ScrollView>(null);
-  const sectionOffsets = useRef<Partial<Record<SectionKey, number>>>({});
   const [form, setForm] = useState(() => createEmptyHealthLogForm(initialWeight));
 
   useEffect(() => {
@@ -72,44 +88,42 @@ export function LogHealthRecordModal({
     }
   }, [visible, initialWeight]);
 
-  useEffect(() => {
-    if (!visible || !initialSection) {
+  const showBloodPressure = mode === 'full' || mode === 'bloodPressure';
+  const showWeight = mode === 'full' || mode === 'weight';
+  const showSymptoms = mode === 'full' || mode === 'symptoms';
+  const showMedication = mode === 'full' || mode === 'medication';
+  const showGeneralNotes = mode === 'full';
+
+  const toggleSymptom = (symptom: HealthSymptom) => {
+    if (isSymptomChipDisabled(form.selectedSymptoms, symptom)) {
       return;
     }
 
-    const timer = setTimeout(() => {
-      const offset = sectionOffsets.current[initialSection];
+    setForm((current) => {
+      const nextSymptoms = toggleHealthSymptom(current.selectedSymptoms, symptom);
 
-      if (offset !== undefined) {
-        scrollRef.current?.scrollTo({ y: Math.max(offset - 12, 0), animated: true });
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [visible, initialSection]);
-
-  const rememberSectionOffset = (key: SectionKey) => (y: number) => {
-    sectionOffsets.current[key] = y;
-  };
-
-  const toggleSymptom = (symptom: HealthSymptom) => {
-    setForm((current) => ({
-      ...current,
-      selectedSymptoms: current.selectedSymptoms.includes(symptom)
-        ? current.selectedSymptoms.filter((item) => item !== symptom)
-        : [...current.selectedSymptoms, symptom],
-    }));
+      return {
+        ...current,
+        selectedSymptoms: nextSymptoms,
+        otherSymptomDetails:
+          nextSymptoms.includes('None') || !nextSymptoms.includes('Other')
+            ? ''
+            : current.otherSymptomDetails,
+      };
+    });
   };
 
   const handleSave = () => {
     try {
-      const input = buildSaveHealthRecordInput(form);
+      const input = buildSaveHealthRecordInput(form, mode === 'full' ? undefined : mode);
 
       if (!input) {
-        Alert.alert(
-          'Nothing to save',
-          'Enter at least one health detail before saving your record.',
-        );
+        const message =
+          mode === 'full'
+            ? 'Enter at least one health detail before saving your record.'
+            : EMPTY_MESSAGES[mode];
+
+        Alert.alert('Nothing to save', message);
         return;
       }
 
@@ -124,158 +138,196 @@ export function LogHealthRecordModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Log Health Record</Text>
-          <Pressable onPress={onClose} hitSlop={8}>
-            <Text style={styles.closeText}>Close</Text>
-          </Pressable>
-        </View>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      statusBarTranslucent={Platform.OS === 'android'}
+      onRequestClose={onClose}>
+      <SafeAreaProvider>
+        <View style={styles.container}>
+          <SafeAreaView edges={['top', 'left', 'right']} style={styles.headerSafe}>
+            <View style={styles.header}>
+              <Text style={styles.title}>{MODAL_TITLES[mode]}</Text>
+              <Pressable onPress={onClose} hitSlop={8}>
+                <Text style={styles.closeText}>Close</Text>
+              </Pressable>
+            </View>
+          </SafeAreaView>
 
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView
-            ref={scrollRef}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
-            <FormSection
-              title="Blood Pressure"
-              onLayout={rememberSectionOffset('bloodPressure')}>
-              <View style={styles.row}>
-                <View style={styles.halfField}>
-                  <AuthTextField
-                    label="Systolic"
-                    placeholder="e.g. 120"
-                    value={form.systolic}
-                    onChangeText={(systolic) => setForm((current) => ({ ...current, systolic }))}
-                    keyboardType="number-pad"
-                  />
-                </View>
-                <View style={styles.halfField}>
-                  <AuthTextField
-                    label="Diastolic"
-                    placeholder="e.g. 80"
-                    value={form.diastolic}
-                    onChangeText={(diastolic) => setForm((current) => ({ ...current, diastolic }))}
-                    keyboardType="number-pad"
-                  />
-                </View>
-              </View>
-            </FormSection>
-
-            <FormSection title="Weight" onLayout={rememberSectionOffset('weight')}>
-              <AuthTextField
-                label="Weight (kg)"
-                placeholder="e.g. 72.4"
-                value={form.weight}
-                onChangeText={(weight) => setForm((current) => ({ ...current, weight }))}
-                keyboardType="decimal-pad"
-              />
-            </FormSection>
-
-            <FormSection title="Symptoms" onLayout={rememberSectionOffset('symptoms')}>
-              <Text style={styles.helperText}>Select any symptoms you are experiencing.</Text>
-              <View style={styles.chipGrid}>
-                {HEALTH_SYMPTOMS.map((symptom) => {
-                  const isSelected = form.selectedSymptoms.includes(symptom);
-
-                  return (
-                    <Pressable
-                      key={symptom}
-                      style={[styles.chip, isSelected && styles.chipSelected]}
-                      onPress={() => toggleSymptom(symptom)}>
-                      <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                        {symptom}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              {form.selectedSymptoms.includes('Other') ? (
-                <AuthTextField
-                  label="Other symptom details"
-                  placeholder="Describe your other symptom"
-                  value={form.otherSymptomDetails}
-                  onChangeText={(otherSymptomDetails) =>
-                    setForm((current) => ({ ...current, otherSymptomDetails }))
-                  }
-                  multiline
-                  numberOfLines={3}
-                  style={styles.notesInput}
-                />
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}>
+              {showBloodPressure ? (
+                <FormSection title="Blood Pressure">
+                  <View style={styles.row}>
+                    <View style={styles.halfField}>
+                      <AuthTextField
+                        label="Systolic"
+                        placeholder="e.g. 120"
+                        value={form.systolic}
+                        onChangeText={(systolic) => setForm((current) => ({ ...current, systolic }))}
+                        keyboardType="number-pad"
+                      />
+                    </View>
+                    <View style={styles.halfField}>
+                      <AuthTextField
+                        label="Diastolic"
+                        placeholder="e.g. 80"
+                        value={form.diastolic}
+                        onChangeText={(diastolic) =>
+                          setForm((current) => ({ ...current, diastolic }))
+                        }
+                        keyboardType="number-pad"
+                      />
+                    </View>
+                  </View>
+                </FormSection>
               ) : null}
-            </FormSection>
 
-            <FormSection title="Medication" onLayout={rememberSectionOffset('medication')}>
-              <AuthTextField
-                label="Medication Name"
-                placeholder="e.g. Folic Acid"
-                value={form.medicationName}
-                onChangeText={(medicationName) =>
-                  setForm((current) => ({ ...current, medicationName }))
-                }
-              />
-              <AuthTextField
-                label="Dosage"
-                placeholder="e.g. 5 mg"
-                value={form.medicationDosage}
-                onChangeText={(medicationDosage) =>
-                  setForm((current) => ({ ...current, medicationDosage }))
-                }
-              />
-              <AuthTextField
-                label="Frequency"
-                placeholder="e.g. Once daily"
-                value={form.medicationFrequency}
-                onChangeText={(medicationFrequency) =>
-                  setForm((current) => ({ ...current, medicationFrequency }))
-                }
-              />
-              <AuthTextField
-                label="Notes (optional)"
-                placeholder="Any medication instructions"
-                value={form.medicationNotes}
-                onChangeText={(medicationNotes) =>
-                  setForm((current) => ({ ...current, medicationNotes }))
-                }
-                multiline
-                numberOfLines={3}
-                style={styles.notesInput}
-              />
-            </FormSection>
+              {showWeight ? (
+                <FormSection title="Weight">
+                  <AuthTextField
+                    label="Weight (kg)"
+                    placeholder="e.g. 72.4"
+                    value={form.weight}
+                    onChangeText={(weight) => setForm((current) => ({ ...current, weight }))}
+                    keyboardType="decimal-pad"
+                  />
+                </FormSection>
+              ) : null}
 
-            <FormSection title="General Notes" onLayout={rememberSectionOffset('generalNotes')}>
-              <AuthTextField
-                label="Additional Notes (optional)"
-                placeholder="Any other health notes for today"
-                value={form.generalNotes}
-                onChangeText={(generalNotes) =>
-                  setForm((current) => ({ ...current, generalNotes }))
-                }
-                multiline
-                numberOfLines={4}
-                style={styles.notesInput}
-              />
-            </FormSection>
-          </ScrollView>
-        </KeyboardAvoidingView>
+              {showSymptoms ? (
+                <FormSection title="Symptoms">
+                  <Text style={styles.helperText}>Select any symptoms you are experiencing.</Text>
+                  <View style={styles.chipGrid}>
+                    {HEALTH_SYMPTOMS.map((symptom) => {
+                      const isSelected = form.selectedSymptoms.includes(symptom);
+                      const isDisabled = isSymptomChipDisabled(form.selectedSymptoms, symptom);
 
-        <View style={styles.footer}>
-          <PrimaryButton label="Save Health Record" onPress={handleSave} />
+                      return (
+                        <Pressable
+                          key={symptom}
+                          style={[
+                            styles.chip,
+                            isSelected && styles.chipSelected,
+                            isDisabled && styles.chipDisabled,
+                          ]}
+                          onPress={() => toggleSymptom(symptom)}
+                          disabled={isDisabled}>
+                          <Text
+                            style={[
+                              styles.chipText,
+                              isSelected && styles.chipTextSelected,
+                              isDisabled && styles.chipTextDisabled,
+                            ]}>
+                            {symptom}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  {form.selectedSymptoms.includes('Other') ? (
+                    <AuthTextField
+                      label="Other symptom details"
+                      placeholder="Describe your other symptom"
+                      value={form.otherSymptomDetails}
+                      onChangeText={(otherSymptomDetails) =>
+                        setForm((current) => ({ ...current, otherSymptomDetails }))
+                      }
+                      multiline
+                      numberOfLines={3}
+                      style={styles.notesInput}
+                    />
+                  ) : null}
+                </FormSection>
+              ) : null}
+
+              {showMedication ? (
+                <FormSection
+                  title={mode === 'full' ? 'Medication (optional)' : 'Medication'}>
+                  <AuthTextField
+                    label="Medication Name"
+                    placeholder="e.g. Folic Acid"
+                    value={form.medicationName}
+                    onChangeText={(medicationName) =>
+                      setForm((current) => ({ ...current, medicationName }))
+                    }
+                  />
+                  <AuthTextField
+                    label="Dosage"
+                    placeholder="e.g. 5 mg"
+                    value={form.medicationDosage}
+                    onChangeText={(medicationDosage) =>
+                      setForm((current) => ({ ...current, medicationDosage }))
+                    }
+                  />
+                  <AuthTextField
+                    label="Frequency"
+                    placeholder="e.g. Once daily"
+                    value={form.medicationFrequency}
+                    onChangeText={(medicationFrequency) =>
+                      setForm((current) => ({ ...current, medicationFrequency }))
+                    }
+                  />
+                  <AuthTextField
+                    label="Notes (optional)"
+                    placeholder="Any medication instructions"
+                    value={form.medicationNotes}
+                    onChangeText={(medicationNotes) =>
+                      setForm((current) => ({ ...current, medicationNotes }))
+                    }
+                    multiline
+                    numberOfLines={3}
+                    style={styles.notesInput}
+                  />
+                </FormSection>
+              ) : null}
+
+              {showGeneralNotes ? (
+                <FormSection title="General Notes">
+                  <AuthTextField
+                    label="Additional Notes (optional)"
+                    placeholder="Any other health notes for today"
+                    value={form.generalNotes}
+                    onChangeText={(generalNotes) =>
+                      setForm((current) => ({ ...current, generalNotes }))
+                    }
+                    multiline
+                    numberOfLines={4}
+                    style={styles.notesInput}
+                  />
+                </FormSection>
+              ) : null}
+            </ScrollView>
+          </KeyboardAvoidingView>
+
+          <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.footerSafe}>
+            <View style={styles.footer}>
+              <PrimaryButton label={SAVE_LABELS[mode]} onPress={handleSave} />
+            </View>
+          </SafeAreaView>
         </View>
-      </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: BrandColors.background,
+  },
+  headerSafe: {
+    backgroundColor: BrandColors.white,
+  },
+  footerSafe: {
+    backgroundColor: BrandColors.white,
   },
   flex: {
     flex: 1,
@@ -351,6 +403,9 @@ const styles = StyleSheet.create({
     borderColor: BrandColors.primary,
     backgroundColor: BrandColors.primaryMuted,
   },
+  chipDisabled: {
+    opacity: 0.45,
+  },
   chipText: {
     fontSize: PatientDashboardTypography.label,
     fontWeight: '500',
@@ -360,6 +415,9 @@ const styles = StyleSheet.create({
     color: BrandColors.primaryDark,
     fontWeight: '600',
   },
+  chipTextDisabled: {
+    color: BrandColors.textSecondary,
+  },
   notesInput: {
     minHeight: 88,
     textAlignVertical: 'top',
@@ -367,7 +425,6 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 8 : 16,
     borderTopWidth: 1,
     borderTopColor: BrandColors.border,
     backgroundColor: BrandColors.white,

@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { AlertTriangle, Calendar } from 'lucide-react-native';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AddAppointmentModal } from '@/components/appointments/add-appointment-modal';
 import { AppointmentListItem } from '@/components/appointments/appointment-list-item';
 import { AppointmentStatusBadge } from '@/components/appointments/appointment-status-badge';
-import { PrimaryButton } from '@/components/primary-button';
 import { DashboardCard } from '@/components/patient-dashboard/dashboard-card';
 import { BrandColors } from '@/constants/brand';
 import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
@@ -16,10 +14,47 @@ import {
   getAppointmentStatus,
 } from '@/utils/appointments';
 
+function AppointmentSection({
+  title,
+  appointments,
+  emptyText,
+  onRequestReschedule,
+}: {
+  title: string;
+  appointments: ReturnType<typeof useAppointments>['upcomingAppointments'];
+  emptyText: string;
+  onRequestReschedule?: (id: string) => void;
+}) {
+  return (
+    <View style={styles.listSection}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {appointments.length > 0 ? (
+        <View style={styles.list}>
+          {appointments.map((appointment) => (
+            <AppointmentListItem
+              key={appointment.id}
+              appointment={appointment}
+              onRequestReschedule={onRequestReschedule}
+            />
+          ))}
+        </View>
+      ) : (
+        <Text style={styles.emptyListText}>{emptyText}</Text>
+      )}
+    </View>
+  );
+}
+
 export default function PatientAppointmentsScreen() {
-  const { sortedAppointments, nextAppointment, addAppointment, markAppointmentCompleted } =
-    useAppointments();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const {
+    nextAppointment,
+    upcomingAppointments,
+    missedAppointments,
+    completedAppointments,
+    reminders,
+    missedAncWarning,
+    requestReschedule,
+  } = useAppointments();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -30,9 +65,35 @@ export default function PatientAppointmentsScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Antenatal Appointments</Text>
           <Text style={styles.subtitle}>
-            Track your clinic visits and never miss an appointment.
+            Your clinic schedules ANC visits. View upcoming appointments and request a reschedule
+            if needed.
           </Text>
         </View>
+
+        {reminders.map((reminder) => (
+          <View
+            key={reminder.id}
+            style={[
+              styles.reminderBanner,
+              reminder.tone === 'today' ? styles.reminderToday : styles.reminderTomorrow,
+            ]}>
+            <Calendar
+              size={18}
+              color={reminder.tone === 'today' ? BrandColors.primaryDark : '#0369A1'}
+            />
+            <View style={styles.reminderCopy}>
+              <Text style={styles.reminderTitle}>{reminder.title}</Text>
+              <Text style={styles.reminderMessage}>{reminder.message}</Text>
+            </View>
+          </View>
+        ))}
+
+        {missedAncWarning ? (
+          <View style={styles.warningBanner}>
+            <AlertTriangle size={18} color="#B45309" />
+            <Text style={styles.warningText}>{missedAncWarning}</Text>
+          </View>
+        ) : null}
 
         <DashboardCard title="Next Appointment">
           {nextAppointment ? (
@@ -50,36 +111,31 @@ export default function PatientAppointmentsScreen() {
               <Text style={styles.nextType}>{nextAppointment.appointmentType}</Text>
             </View>
           ) : (
-            <Text style={styles.emptyText}>No appointment scheduled yet.</Text>
+            <Text style={styles.emptyText}>
+              No upcoming appointment. Your clinic will schedule your next ANC visit.
+            </Text>
           )}
         </DashboardCard>
 
-        <PrimaryButton label="Add Appointment" onPress={() => setIsModalVisible(true)} />
+        <AppointmentSection
+          title="Upcoming Appointments"
+          appointments={upcomingAppointments}
+          emptyText="No upcoming appointments scheduled by your clinic."
+          onRequestReschedule={requestReschedule}
+        />
 
-        <View style={styles.listSection}>
-          <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+        <AppointmentSection
+          title="Missed Appointments"
+          appointments={missedAppointments}
+          emptyText="No missed appointments."
+        />
 
-          {sortedAppointments.length > 0 ? (
-            <View style={styles.list}>
-              {sortedAppointments.map((appointment) => (
-                <AppointmentListItem
-                  key={appointment.id}
-                  appointment={appointment}
-                  onMarkCompleted={markAppointmentCompleted}
-                />
-              ))}
-            </View>
-          ) : (
-            <Text style={styles.emptyListText}>No appointments added yet.</Text>
-          )}
-        </View>
+        <AppointmentSection
+          title="Completed Appointments"
+          appointments={completedAppointments}
+          emptyText="No completed appointments yet."
+        />
       </ScrollView>
-
-      <AddAppointmentModal
-        visible={isModalVisible}
-        onClose={() => setIsModalVisible(false)}
-        onSave={addAppointment}
-      />
     </SafeAreaView>
   );
 }
@@ -108,6 +164,52 @@ const styles = StyleSheet.create({
     fontSize: PatientDashboardTypography.body,
     lineHeight: 24,
     color: BrandColors.textSecondary,
+  },
+  reminderBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  reminderToday: {
+    backgroundColor: BrandColors.primaryMuted,
+    borderColor: BrandColors.primaryLight,
+  },
+  reminderTomorrow: {
+    backgroundColor: '#E0F2FE',
+    borderColor: '#BAE6FD',
+  },
+  reminderCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  reminderTitle: {
+    fontSize: PatientDashboardTypography.caption,
+    fontWeight: '700',
+    color: BrandColors.text,
+  },
+  reminderMessage: {
+    fontSize: PatientDashboardTypography.caption,
+    lineHeight: 18,
+    color: BrandColors.textSecondary,
+  },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  warningText: {
+    flex: 1,
+    fontSize: PatientDashboardTypography.caption,
+    lineHeight: 18,
+    color: '#B45309',
   },
   nextAppointmentContent: {
     gap: 6,
@@ -157,5 +259,10 @@ const styles = StyleSheet.create({
     fontSize: PatientDashboardTypography.bodySmall,
     color: BrandColors.textSecondary,
     lineHeight: 22,
+    backgroundColor: BrandColors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: BrandColors.border,
+    padding: 16,
   },
 });

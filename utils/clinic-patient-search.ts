@@ -25,11 +25,9 @@ export function searchCareNetworkPatients(
     const phoneMatch =
       normalizedPhoneQuery.length > 0 &&
       normalizePhone(patient.phoneNumber).includes(normalizedPhoneQuery);
-    const ancBookMatch = patient.ancBookNumber
-      ? patient.ancBookNumber.toLowerCase().includes(normalizedQuery)
-      : false;
+    const emailMatch = patient.emailAddress.toLowerCase().includes(normalizedQuery);
 
-    return nameMatch || phoneMatch || ancBookMatch;
+    return nameMatch || phoneMatch || emailMatch;
   });
 }
 

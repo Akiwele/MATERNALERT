@@ -1,5 +1,12 @@
 import { getRiskStatusFromConditions } from '@/constants/medical-conditions';
-import { getPatientProfile, type PatientProfile } from '@/stores/patient-profile';
+import { getAncAppointmentsForPhone } from '@/stores/anc-appointments-store';
+import { getPatientProfile } from '@/stores/patient-profile';
+import { getPatientPhoneForAppointments } from '@/utils/appointment-patient-view';
+import {
+  countConsecutiveMissedAncAppointments,
+  MISSED_TWO_CONSECUTIVE_REASON,
+} from '@/utils/anc-risk-rules';
+import { formatMedicalConditionsList } from '@/utils/profile-display';
 
 export type PregnancyRiskLevel = 'Low Risk' | 'High Risk';
 
@@ -11,21 +18,18 @@ export type PregnancyRiskDisplay = {
 
 const LOW_RISK_REASON = 'No current pregnancy risks detected.';
 
-function formatHighRiskConditionLabels(profile: PatientProfile): string {
-  return profile.medicalConditions
-    .filter((condition) => condition !== 'None')
-    .map((condition) => {
-      if (condition === 'Other' && profile.otherConditionDetails.trim()) {
-        return profile.otherConditionDetails.trim();
-      }
-
-      return condition;
-    })
-    .join(', ');
-}
-
 export function getPregnancyRiskDisplay(): PregnancyRiskDisplay {
   const profile = getPatientProfile();
+  const clinicAppointments = getAncAppointmentsForPhone(getPatientPhoneForAppointments());
+  const consecutiveMissed = countConsecutiveMissedAncAppointments(clinicAppointments);
+
+  if (consecutiveMissed >= 2) {
+    return {
+      status: 'High Risk',
+      headline: 'High Risk / Follow-up Needed',
+      reason: MISSED_TWO_CONSECUTIVE_REASON,
+    };
+  }
 
   if (!profile || profile.medicalConditions.length === 0) {
     return {
@@ -45,7 +49,10 @@ export function getPregnancyRiskDisplay(): PregnancyRiskDisplay {
     };
   }
 
-  const conditionLabels = formatHighRiskConditionLabels(profile);
+  const conditionLabels = formatMedicalConditionsList(
+    profile.medicalConditions,
+    profile.otherConditionDetails,
+  );
 
   return {
     status: 'High Risk',

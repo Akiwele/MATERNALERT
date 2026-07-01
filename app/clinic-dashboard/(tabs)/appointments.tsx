@@ -1,49 +1,60 @@
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ClinicAppointmentListCard } from '@/components/clinic/clinic-appointment-list-card';
+import { ClinicRescheduleModal } from '@/components/clinic/clinic-reschedule-modal';
 import { ClinicSectionHeader } from '@/components/clinic/clinic-section-header';
+import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
 import { useClinicData } from '@/contexts/clinic-data-context';
+import type { ClinicAppointment } from '@/types/clinic-records';
 
 export default function ClinicAppointmentsScreen() {
+  const router = useRouter();
   const {
-    appointments,
     todaysAppointments,
     upcomingAppointments,
     missedAppointments,
+    rescheduleRequestedAppointments,
     markAppointmentAttended,
     markAppointmentMissed,
     rescheduleAppointment,
   } = useClinicData();
 
-  const handleReschedule = (appointmentId: string) => {
-    const appointment = appointments.find((entry) => entry.id === appointmentId);
-
-    if (!appointment) {
-      return;
-    }
-
-    Alert.alert('Reschedule appointment', 'Move this appointment to one week from the original date?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reschedule',
-        onPress: () => {
-          const newDate = new Date(appointment.date);
-          newDate.setDate(newDate.getDate() + 7);
-          rescheduleAppointment(appointmentId, newDate, appointment.time);
-        },
-      },
-    ]);
-  };
+  const [rescheduleTarget, setRescheduleTarget] = useState<ClinicAppointment | null>(null);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Appointments</Text>
-          <Text style={styles.subtitle}>Manage today, upcoming, and missed antenatal visits.</Text>
+          <Text style={styles.subtitle}>
+            Schedule ANC visits for patients and manage attendance.
+          </Text>
         </View>
+
+        <PrimaryButton
+          label="Add Appointment"
+          onPress={() => router.push('/clinic-dashboard/add-appointment')}
+        />
+
+        {rescheduleRequestedAppointments.length > 0 ? (
+          <View style={styles.section}>
+            <ClinicSectionHeader title="Reschedule Requests" />
+            <View style={styles.list}>
+              {rescheduleRequestedAppointments.map((appointment) => (
+                <ClinicAppointmentListCard
+                  key={appointment.id}
+                  appointment={appointment}
+                  onMarkMissed={() => markAppointmentMissed(appointment.id)}
+                  onReschedule={() => setRescheduleTarget(appointment)}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <ClinicSectionHeader title="Today" />
@@ -57,7 +68,7 @@ export default function ClinicAppointmentsScreen() {
                   appointment={appointment}
                   onMarkAttended={() => markAppointmentAttended(appointment.id)}
                   onMarkMissed={() => markAppointmentMissed(appointment.id)}
-                  onReschedule={() => handleReschedule(appointment.id)}
+                  onReschedule={() => setRescheduleTarget(appointment)}
                 />
               ))}
             </View>
@@ -76,7 +87,7 @@ export default function ClinicAppointmentsScreen() {
                   appointment={appointment}
                   onMarkAttended={() => markAppointmentAttended(appointment.id)}
                   onMarkMissed={() => markAppointmentMissed(appointment.id)}
-                  onReschedule={() => handleReschedule(appointment.id)}
+                  onReschedule={() => setRescheduleTarget(appointment)}
                 />
               ))}
             </View>
@@ -100,6 +111,13 @@ export default function ClinicAppointmentsScreen() {
           )}
         </View>
       </ScrollView>
+
+      <ClinicRescheduleModal
+        visible={rescheduleTarget !== null}
+        appointment={rescheduleTarget}
+        onClose={() => setRescheduleTarget(null)}
+        onConfirm={rescheduleAppointment}
+      />
     </SafeAreaView>
   );
 }

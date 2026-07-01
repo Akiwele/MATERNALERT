@@ -1,4 +1,5 @@
 import type { SaveHealthRecordInput } from '@/types/health';
+import { normalizeSymptomsForSave } from '@/constants/health-symptoms';
 
 export type HealthLogFocusSection = 'bloodPressure' | 'weight' | 'symptoms' | 'medication';
 
@@ -28,7 +29,10 @@ export const createEmptyHealthLogForm = (initialWeight?: number | null): HealthL
   generalNotes: '',
 });
 
-export function buildSaveHealthRecordInput(form: HealthLogFormState): SaveHealthRecordInput | null {
+export function buildSaveHealthRecordInput(
+  form: HealthLogFormState,
+  focusSection?: HealthLogFocusSection,
+): SaveHealthRecordInput | null {
   const systolicValue = form.systolic.trim();
   const diastolicValue = form.diastolic.trim();
   const weightValue = form.weight.trim();
@@ -43,12 +47,28 @@ export function buildSaveHealthRecordInput(form: HealthLogFormState): SaveHealth
   );
   const hasGeneralNotes = Boolean(form.generalNotes.trim());
 
-  if (!hasBloodPressure && !hasWeight && !hasSymptoms && !hasMedication && !hasGeneralNotes) {
+  if (focusSection === 'bloodPressure') {
+    if (!hasBloodPressure) {
+      return null;
+    }
+  } else if (focusSection === 'weight') {
+    if (!hasWeight) {
+      return null;
+    }
+  } else if (focusSection === 'symptoms') {
+    if (!hasSymptoms) {
+      return null;
+    }
+  } else if (focusSection === 'medication') {
+    if (!hasMedication) {
+      return null;
+    }
+  } else if (!hasBloodPressure && !hasWeight && !hasSymptoms && !hasMedication && !hasGeneralNotes) {
     return null;
   }
 
   const input: SaveHealthRecordInput = {
-    symptoms: form.selectedSymptoms,
+    symptoms: normalizeSymptomsForSave(form.selectedSymptoms),
   };
 
   if (hasBloodPressure) {

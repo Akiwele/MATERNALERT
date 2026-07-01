@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppointmentStatusBadge } from '@/components/appointments/appointment-status-badge';
 import { BrandColors } from '@/constants/brand';
@@ -12,11 +12,31 @@ import {
 
 type AppointmentListItemProps = {
   appointment: AntenatalAppointment;
-  onMarkCompleted?: (id: string) => void;
+  onRequestReschedule?: (id: string) => void;
 };
 
-export function AppointmentListItem({ appointment, onMarkCompleted }: AppointmentListItemProps) {
+export function AppointmentListItem({
+  appointment,
+  onRequestReschedule,
+}: AppointmentListItemProps) {
   const status = getAppointmentStatus(appointment);
+  const canRequestReschedule =
+    (status === 'upcoming' || status === 'reschedule_requested') &&
+    appointment.clinicalStatus !== 'reschedule_requested';
+
+  const handleRequestReschedule = () => {
+    Alert.alert(
+      'Request Reschedule',
+      'Your clinic will be notified. They will set a new date and time for you.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send Request',
+          onPress: () => onRequestReschedule?.(appointment.id),
+        },
+      ],
+    );
+  };
 
   return (
     <View style={styles.card}>
@@ -49,11 +69,17 @@ export function AppointmentListItem({ appointment, onMarkCompleted }: Appointmen
         </View>
       ) : null}
 
-      {status === 'upcoming' && onMarkCompleted ? (
+      {status === 'reschedule_requested' ? (
+        <Text style={styles.pendingNote}>
+          Reschedule requested. Your clinic will contact you with a new date.
+        </Text>
+      ) : null}
+
+      {canRequestReschedule && onRequestReschedule ? (
         <Pressable
-          style={({ pressed }) => [styles.completeButton, pressed && styles.completeButtonPressed]}
-          onPress={() => onMarkCompleted(appointment.id)}>
-          <Text style={styles.completeButtonText}>Mark as Completed</Text>
+          style={({ pressed }) => [styles.rescheduleButton, pressed && styles.rescheduleButtonPressed]}
+          onPress={handleRequestReschedule}>
+          <Text style={styles.rescheduleButtonText}>Request Reschedule</Text>
         </Pressable>
       ) : null}
     </View>
@@ -116,7 +142,17 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: BrandColors.text,
   },
-  completeButton: {
+  pendingNote: {
+    fontSize: PatientDashboardTypography.caption,
+    lineHeight: 18,
+    color: '#B45309',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  rescheduleButton: {
     marginTop: 4,
     backgroundColor: BrandColors.primaryMuted,
     borderRadius: 12,
@@ -125,10 +161,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BrandColors.primaryLight,
   },
-  completeButtonPressed: {
+  rescheduleButtonPressed: {
     opacity: 0.88,
   },
-  completeButtonText: {
+  rescheduleButtonText: {
     fontSize: PatientDashboardTypography.label,
     fontWeight: '600',
     color: BrandColors.primaryDark,

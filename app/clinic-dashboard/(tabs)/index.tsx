@@ -10,7 +10,8 @@ import { BrandColors } from '@/constants/brand';
 import { useClinicData } from '@/contexts/clinic-data-context';
 
 export default function ClinicDashboardHomeScreen() {
-  const { clinicName, stats, todaysAppointments, highRiskAlerts, activities } = useClinicData();
+  const { clinicName, stats, todaysAppointments, highRiskAlerts, missedAppointments, activities } =
+    useClinicData();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -45,6 +46,24 @@ export default function ClinicDashboardHomeScreen() {
             todaysAppointments.map((appointment) => (
               <ClinicDashboardAppointmentRow key={appointment.id} appointment={appointment} />
             ))
+          )}
+        </View>
+
+        <View style={styles.sectionCard}>
+          <ClinicSectionHeader title="Missed Appointment Alerts" />
+          {missedAppointments.length === 0 ? (
+            <Text style={styles.emptyText}>No missed appointments to review.</Text>
+          ) : (
+            <View style={styles.alertList}>
+              {missedAppointments.slice(0, 5).map((appointment) => (
+                <View key={appointment.id} style={styles.missedRow}>
+                  <Text style={styles.missedName}>{appointment.patientName}</Text>
+                  <Text style={styles.missedMeta}>
+                    {appointment.visitType} · missed visit
+                  </Text>
+                </View>
+              ))}
+            </View>
           )}
         </View>
 
@@ -115,6 +134,21 @@ const styles = StyleSheet.create({
   },
   alertList: {
     gap: 10,
+  },
+  missedRow: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: BrandColors.border,
+    gap: 2,
+  },
+  missedName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: BrandColors.text,
+  },
+  missedMeta: {
+    fontSize: 13,
+    color: '#B45309',
   },
   emptyText: {
     fontSize: 14,

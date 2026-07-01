@@ -12,12 +12,19 @@ type ClinicAppointmentListCardProps = {
   showActions?: boolean;
 };
 
+const STATUS_STYLES: Record<
+  ClinicAppointment['status'],
+  { bg: string; text: string; label: string }
+> = {
+  scheduled: { bg: BrandColors.primaryMuted, text: BrandColors.primaryDark, label: 'Scheduled' },
+  attended: { bg: '#DCFCE7', text: '#166534', label: 'Attended' },
+  missed: { bg: '#FEE2E2', text: '#B91C1C', label: 'Missed' },
+  reschedule_requested: { bg: '#FFFBEB', text: '#B45309', label: 'Reschedule Requested' },
+  rescheduled: { bg: '#E0F2FE', text: '#0369A1', label: 'Rescheduled' },
+};
+
 function StatusPill({ status }: { status: ClinicAppointment['status'] }) {
-  const stylesByStatus = {
-    scheduled: { bg: BrandColors.primaryMuted, text: BrandColors.primaryDark, label: 'Scheduled' },
-    attended: { bg: '#DCFCE7', text: '#166534', label: 'Attended' },
-    missed: { bg: '#FEE2E2', text: '#B91C1C', label: 'Missed' },
-  }[status];
+  const stylesByStatus = STATUS_STYLES[status];
 
   return (
     <View style={[styles.statusPill, { backgroundColor: stylesByStatus.bg }]}>
@@ -35,6 +42,9 @@ export function ClinicAppointmentListCard({
   onReschedule,
   showActions = true,
 }: ClinicAppointmentListCardProps) {
+  const isActionable =
+    appointment.status === 'scheduled' || appointment.status === 'reschedule_requested';
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -49,18 +59,25 @@ export function ClinicAppointmentListCard({
         <Text style={styles.detailText}>{formatClinicDate(appointment.date)}</Text>
         <Text style={styles.detailText}>{formatClinicTime(appointment.time)}</Text>
         <Text style={styles.detailText}>{appointment.visitType}</Text>
+        {appointment.notes?.trim() ? (
+          <Text style={styles.notesText}>Notes: {appointment.notes.trim()}</Text>
+        ) : null}
       </View>
 
-      {showActions && appointment.status === 'scheduled' ? (
+      {showActions && isActionable ? (
         <View style={styles.actions}>
-          <Pressable style={styles.actionButton} onPress={onMarkAttended}>
-            <Text style={styles.actionTextPrimary}>Mark Attended</Text>
-          </Pressable>
+          {appointment.status === 'scheduled' ? (
+            <Pressable style={styles.actionButton} onPress={onMarkAttended}>
+              <Text style={styles.actionTextPrimary}>Mark Attended</Text>
+            </Pressable>
+          ) : null}
           <Pressable style={styles.actionButton} onPress={onMarkMissed}>
             <Text style={styles.actionTextDanger}>Mark Missed</Text>
           </Pressable>
           <Pressable style={styles.actionButton} onPress={onReschedule}>
-            <Text style={styles.actionTextSecondary}>Reschedule</Text>
+            <Text style={styles.actionTextSecondary}>
+              {appointment.status === 'reschedule_requested' ? 'Set New Date' : 'Reschedule'}
+            </Text>
           </Pressable>
         </View>
       ) : null}
@@ -116,6 +133,12 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 14,
     color: BrandColors.text,
+  },
+  notesText: {
+    fontSize: 13,
+    color: BrandColors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   actions: {
     flexDirection: 'row',

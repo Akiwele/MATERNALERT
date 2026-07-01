@@ -3,45 +3,69 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 
 import {
+  getAncAppointmentsForPhone,
+  subscribeAncAppointments,
+  updateAncAppointments,
+} from '@/stores/anc-appointments-store';
+import {
+  countConsecutiveMissedAncAppointments,
+  getPatientMissedAncWarning,
+  MISSED_TWO_CONSECUTIVE_REASON,
+} from '@/utils/anc-risk-rules';
+import {
+  getPatientAppointmentsFromStore,
+  getPatientPhoneForAppointments,
+} from '@/utils/appointment-patient-view';
+import { getAppointmentReminders, type AppointmentReminder } from '@/utils/appointment-reminders';
+import {
+  getAppointmentStatus,
   getNextUpcomingAppointment,
   sortAppointmentsByDate,
   type AntenatalAppointment,
-  type AntenatalAppointmentInput,
 } from '@/utils/appointments';
 
 type AppointmentsContextValue = {
   appointments: AntenatalAppointment[];
   sortedAppointments: AntenatalAppointment[];
+  upcomingAppointments: AntenatalAppointment[];
+  missedAppointments: AntenatalAppointment[];
+  completedAppointments: AntenatalAppointment[];
   nextAppointment: AntenatalAppointment | null;
-  addAppointment: (input: AntenatalAppointmentInput) => void;
-  markAppointmentCompleted: (id: string) => void;
+  reminders: AppointmentReminder[];
+  missedAncWarning: string | null;
+  hasHighRiskFromMissedAnc: boolean;
+  missedAncRiskReason: string | null;
+  requestReschedule: (appointmentId: string) => void;
 };
 
 const AppointmentsContext = createContext<AppointmentsContextValue | null>(null);
 
+function usePatientAppointmentsSnapshot(): AntenatalAppointment[] {
+  return useSyncExternalStore(
+    subscribeAncAppointments,
+    getPatientAppointmentsFromStore,
+    getPatientAppointmentsFromStore,
+  );
+}
+
 export function AppointmentsProvider({ children }: { children: ReactNode }) {
-  const [appointments, setAppointments] = useState<AntenatalAppointment[]>([]);
+  const appointments = usePatientAppointmentsSnapshot();
+  const clinicAppointments = useMemo(
+    () => getAncAppointmentsForPhone(getPatientPhoneForAppointments()),
+    [appointments],
+  );
 
-  const addAppointment = useCallback((input: AntenatalAppointmentInput) => {
-    setAppointments((current) => [
-      ...current,
-      {
-        ...input,
-        id: `apt-${Date.now()}`,
-        completed: false,
-      },
-    ]);
-  }, []);
-
-  const markAppointmentCompleted = useCallback((id: string) => {
-    setAppointments((current) =>
+  const requestReschedule = useCallback((appointmentId: string) => {
+    updateAncAppointments((current) =>
       current.map((appointment) =>
-        appointment.id === id ? { ...appointment, completed: true } : appointment,
+        appointment.id === appointmentId
+          ? { ...appointment, status: 'reschedule_requested' }
+          : appointment,
       ),
     );
   }, []);
@@ -51,20 +75,75 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     [appointments],
   );
 
+  const upcomingAppointments = useMemo(
+    () =>
+      sortedAppointments.filter((appointment) => {
+        const status = getAppointmentStatus(appointment);
+        return status === 'upcoming' || status === 'reschedule_requested';
+      }),
+    [sortedAppointments],
+  );
+
+  const missedAppointments = useMemo(
+    () =>
+      sortedAppointments.filter(
+        (appointment) => getAppointmentStatus(appointment) === 'missed',
+      ),
+    [sortedAppointments],
+  );
+
+  const completedAppointments = useMemo(
+    () =>
+      sortedAppointments.filter(
+        (appointment) => getAppointmentStatus(appointment) === 'completed',
+      ),
+    [sortedAppointments],
+  );
+
   const nextAppointment = useMemo(
     () => getNextUpcomingAppointment(appointments),
     [appointments],
   );
 
+  const reminders = useMemo(() => getAppointmentReminders(appointments), [appointments]);
+  const missedAncWarning = useMemo(
+    () => getPatientMissedAncWarning(clinicAppointments),
+    [clinicAppointments],
+  );
+  const consecutiveMissed = useMemo(
+    () => countConsecutiveMissedAncAppointments(clinicAppointments),
+    [clinicAppointments],
+  );
+  const hasHighRiskFromMissedAnc = consecutiveMissed >= 2;
+  const missedAncRiskReason = hasHighRiskFromMissedAnc ? MISSED_TWO_CONSECUTIVE_REASON : null;
+
   const value = useMemo(
     () => ({
       appointments,
       sortedAppointments,
+      upcomingAppointments,
+      missedAppointments,
+      completedAppointments,
       nextAppointment,
-      addAppointment,
-      markAppointmentCompleted,
+      reminders,
+      missedAncWarning,
+      hasHighRiskFromMissedAnc,
+      missedAncRiskReason,
+      requestReschedule,
     }),
-    [appointments, sortedAppointments, nextAppointment, addAppointment, markAppointmentCompleted],
+    [
+      appointments,
+      sortedAppointments,
+      upcomingAppointments,
+      missedAppointments,
+      completedAppointments,
+      nextAppointment,
+      reminders,
+      missedAncWarning,
+      hasHighRiskFromMissedAnc,
+      missedAncRiskReason,
+      requestReschedule,
+    ],
   );
 
   return (

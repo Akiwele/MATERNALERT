@@ -71,7 +71,6 @@ export default function EditPregnancyProfileScreen() {
                 medicalConditions: result.medicalConditions,
                 otherConditionDetails: result.otherConditionDetails,
                 riskStatus: result.riskStatus,
-                ancBookNumber: result.ancBookNumber,
               });
 
               syncPatientToCareNetwork();

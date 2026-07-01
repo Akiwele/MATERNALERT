@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BrandColors } from '@/constants/brand';
 import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
+import { isEmptyProfileDisplayValue } from '@/utils/profile-display';
 
 type ProfileSectionCardProps = {
   title: string;
@@ -34,14 +35,20 @@ export function ProfileSectionCard({
 
 type ProfileDetailRowProps = {
   label: string;
-  value: string;
+  value?: string | null;
 };
 
 export function ProfileDetailRow({ label, value }: ProfileDetailRowProps) {
+  const hasValue = !isEmptyProfileDisplayValue(value);
+
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      {hasValue ? (
+        <Text style={styles.value}>{value?.trim()}</Text>
+      ) : (
+        <View style={styles.emptyValue} />
+      )}
     </View>
   );
 }
@@ -92,5 +99,8 @@ const styles = StyleSheet.create({
     fontSize: PatientDashboardTypography.bodySmall,
     color: BrandColors.text,
     lineHeight: 24,
+  },
+  emptyValue: {
+    minHeight: 24,
   },
 });

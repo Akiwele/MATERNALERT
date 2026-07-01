@@ -32,6 +32,7 @@ export function upsertCareNetworkPatientFromAppData(
     id: recordId,
     fullName: registration.fullName,
     phoneNumber: registration.phoneNumber,
+    emailAddress: registration.email,
     ancBookNumber: profile?.ancBookNumber?.trim() || undefined,
     registeredClinicName,
     currentWeek: metrics?.weeks,

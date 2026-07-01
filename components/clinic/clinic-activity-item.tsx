@@ -1,4 +1,4 @@
-import { CalendarPlus, ClipboardList, HeartPulse, TriangleAlert } from 'lucide-react-native';
+import { CalendarClock, CalendarPlus, ClipboardList, HeartPulse, TriangleAlert } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BrandColors } from '@/constants/brand';
@@ -22,6 +22,8 @@ function ActivityIcon({ type }: { type: ClinicActivity['type'] }) {
       return <HeartPulse size={size} color="#DC2626" />;
     case 'appointment_missed':
       return <TriangleAlert size={size} color="#B45309" />;
+    case 'reschedule_requested':
+      return <CalendarClock size={size} color="#B45309" />;
     default:
       return <ClipboardList size={size} color={color} />;
   }

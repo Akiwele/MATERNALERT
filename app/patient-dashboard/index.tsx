@@ -43,8 +43,14 @@ export default function PatientDashboardHomeScreen() {
     }, []),
   );
 
-  const pregnancyRisk = useMemo(() => getPregnancyRiskDisplay(), [profileRefreshKey]);
-  const { nextAppointment } = useAppointments();
+  const {
+    nextAppointment,
+    reminders,
+    missedAncWarning,
+    hasHighRiskFromMissedAnc,
+    missedAncRiskReason,
+  } = useAppointments();
+  const pregnancyRisk = useMemo(() => getPregnancyRiskDisplay(), [profileRefreshKey, nextAppointment]);
   const { records, summary } = useHealth();
   const pregnancySummary = getPregnancySummaryDisplay();
   const firstName = getPatientDisplayName();
@@ -70,14 +76,45 @@ export default function PatientDashboardHomeScreen() {
           firstName={firstName}
           currentWeek={pregnancySummary.currentWeek}
           dueDate={pregnancySummary.estimatedDeliveryDate}
-          showBpAlert={bpAlert}
-          onNotificationsPress={() => router.push('/patient-dashboard/health')}
+          onProfilePress={() => router.push('/patient-dashboard/profile')}
         />
       </SafeAreaView>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
+        {reminders.map((reminder) => (
+          <View
+            key={reminder.id}
+            style={[
+              styles.reminderBanner,
+              reminder.tone === 'today' ? styles.reminderToday : styles.reminderTomorrow,
+            ]}>
+            <Calendar size={16} color={reminder.tone === 'today' ? BrandColors.primaryDark : '#0369A1'} />
+            <View style={styles.alertCopy}>
+              <Text style={styles.reminderTitle}>{reminder.title}</Text>
+              <Text style={styles.reminderMessage}>{reminder.message}</Text>
+            </View>
+          </View>
+        ))}
+
+        {missedAncWarning ? (
+          <View style={styles.warningBanner}>
+            <AlertTriangle size={16} color="#B45309" style={styles.alertIcon} />
+            <Text style={styles.warningText}>{missedAncWarning}</Text>
+          </View>
+        ) : null}
+
+        {hasHighRiskFromMissedAnc && missedAncRiskReason ? (
+          <View style={styles.highRiskBanner}>
+            <AlertTriangle size={16} color="#DC2626" style={styles.alertIcon} />
+            <View style={styles.alertCopy}>
+              <Text style={styles.highRiskTitle}>High Risk / Follow-up Needed</Text>
+              <Text style={styles.highRiskMessage}>{missedAncRiskReason}</Text>
+            </View>
+          </View>
+        ) : null}
+
         {bpAlert && latestSystolic !== null && latestDiastolic !== null ? (
           <View style={styles.alertBanner}>
             <AlertTriangle size={16} color="#D97706" style={styles.alertIcon} />
@@ -211,6 +248,68 @@ const styles = StyleSheet.create({
     fontSize: PatientDashboardTypography.caption,
     lineHeight: 18,
     color: '#B45309',
+  },
+  reminderBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  reminderToday: {
+    backgroundColor: BrandColors.primaryMuted,
+    borderColor: BrandColors.primaryLight,
+  },
+  reminderTomorrow: {
+    backgroundColor: '#E0F2FE',
+    borderColor: '#BAE6FD',
+  },
+  reminderTitle: {
+    fontSize: PatientDashboardTypography.caption,
+    fontWeight: '700',
+    color: BrandColors.text,
+  },
+  reminderMessage: {
+    fontSize: PatientDashboardTypography.caption,
+    lineHeight: 18,
+    color: BrandColors.textSecondary,
+  },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  warningText: {
+    flex: 1,
+    fontSize: PatientDashboardTypography.caption,
+    lineHeight: 18,
+    color: '#B45309',
+  },
+  highRiskBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  highRiskTitle: {
+    fontSize: PatientDashboardTypography.caption,
+    fontWeight: '700',
+    color: '#B91C1C',
+  },
+  highRiskMessage: {
+    fontSize: PatientDashboardTypography.caption,
+    lineHeight: 18,
+    color: '#DC2626',
   },
   statGrid: {
     flexDirection: 'row',

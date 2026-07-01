@@ -31,7 +31,7 @@ export default function ClinicPatientsScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Patients</Text>
           <Text style={styles.subtitle}>
-            Search by full name, phone number, or ANC book number.
+            Search by full name, phone number, or email address.
           </Text>
         </View>
 
@@ -41,7 +41,7 @@ export default function ClinicPatientsScreen() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No patients found</Text>
             <Text style={styles.emptyText}>
-              Try another name, phone number, or ANC book number.
+              Try another name, phone number, or email address.
             </Text>
           </View>
         ) : (
