@@ -13,7 +13,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppointmentPickerField } from '@/components/appointments/appointment-picker-field';
+import {
+  AppointmentPickerField,
+  type IosPickerRequest,
+} from '@/components/appointments/appointment-picker-field';
+import { IosDateTimePickerSheet } from '@/components/appointments/ios-datetime-picker-sheet';
 import { AppointmentTypeSelector } from '@/components/appointments/appointment-type-selector';
 import { ClinicPatientPicker } from '@/components/clinic/clinic-patient-picker';
 import { PrimaryButton } from '@/components/primary-button';
@@ -35,6 +39,7 @@ export default function AddAppointmentScreen() {
   const [appointmentTime, setAppointmentTime] = useState<Date | null>(null);
   const [visitType, setVisitType] = useState<AppointmentType | null>(null);
   const [notes, setNotes] = useState('');
+  const [iosPickerRequest, setIosPickerRequest] = useState<IosPickerRequest | null>(null);
 
   const handleSave = () => {
     if (!patient || !appointmentDate || !appointmentTime || !visitType) {
@@ -95,6 +100,7 @@ export default function AddAppointmentScreen() {
             value={appointmentDate}
             onChange={setAppointmentDate}
             minimumDate={today}
+            onRequestIosPicker={setIosPickerRequest}
           />
 
           <AppointmentPickerField
@@ -102,6 +108,7 @@ export default function AddAppointmentScreen() {
             label="Appointment Time"
             value={appointmentTime}
             onChange={setAppointmentTime}
+            onRequestIosPicker={setIosPickerRequest}
           />
 
           <AppointmentTypeSelector selectedType={visitType} onSelect={setVisitType} />
@@ -112,7 +119,7 @@ export default function AddAppointmentScreen() {
               style={styles.notesInput}
               value={notes}
               onChangeText={setNotes}
-              placeholder="e.g. Bring ANC book and lab results"
+              placeholder="e.g. Bring lab results and previous visit notes"
               placeholderTextColor={BrandColors.textSecondary}
               multiline
               numberOfLines={3}
@@ -122,6 +129,13 @@ export default function AddAppointmentScreen() {
 
           <PrimaryButton label="Save Appointment" onPress={handleSave} />
         </ScrollView>
+
+        {Platform.OS === 'ios' ? (
+          <IosDateTimePickerSheet
+            request={iosPickerRequest}
+            onClose={() => setIosPickerRequest(null)}
+          />
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

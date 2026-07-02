@@ -2,12 +2,13 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
 
-import { getPatientProfile } from '@/stores/patient-profile';
+import { getPatientProfile, subscribePatientProfile } from '@/stores/patient-profile';
 import type { HealthRecord, HealthSummary, Medication, SaveHealthRecordInput } from '@/types/health';
 import { computeHealthSummary } from '@/utils/health-display';
 
@@ -23,10 +24,17 @@ const HealthContext = createContext<HealthContextValue | null>(null);
 export function HealthProvider({ children }: { children: ReactNode }) {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
+  const [profileSnapshot, setProfileSnapshot] = useState(getPatientProfile);
+
+  useEffect(() => {
+    return subscribePatientProfile(() => {
+      setProfileSnapshot(getPatientProfile());
+    });
+  }, []);
 
   const summary = useMemo(() => {
     const computed = computeHealthSummary(records);
-    const profileWeight = getPatientProfile()?.weightKg ?? null;
+    const profileWeight = profileSnapshot?.weightKg ?? null;
 
     return {
       currentWeightKg: computed.currentWeightKg ?? profileWeight,
@@ -34,7 +42,7 @@ export function HealthProvider({ children }: { children: ReactNode }) {
       diastolic: computed.diastolic,
       lastUpdatedAt: computed.lastUpdatedAt,
     };
-  }, [records]);
+  }, [records, profileSnapshot]);
 
   const saveHealthRecord = useCallback((input: SaveHealthRecordInput) => {
     const recordedAt = new Date().toISOString();

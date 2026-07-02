@@ -1,6 +1,11 @@
 import { BloodGroup } from '@/constants/blood-groups';
 import { EmergencyContactRelationship } from '@/constants/emergency-contact-relationships';
 import { MedicalCondition } from '@/constants/medical-conditions';
+import { calculateBmi } from '@/utils/pregnancy-calculations';
+import {
+  loadPatientProfileFromStorage,
+  savePatientProfileToStorage,
+} from '@/utils/patient-profile-storage';
 
 export type ObstetricHistory = {
   previousPregnancies: number;
@@ -24,18 +29,58 @@ export type PatientProfile = {
   obstetricHistory: ObstetricHistory | null;
   heightCm: number;
   weightKg: number;
+  bmi: number | null;
   bloodGroup: BloodGroup | null;
   allergies: string;
   medicalConditions: MedicalCondition[];
   otherConditionDetails: string;
   riskStatus: string;
-  ancBookNumber?: string;
 };
 
-let patientProfile: PatientProfile | null = null;
+type PatientProfileListener = () => void;
 
-export function setPatientProfile(profile: PatientProfile) {
-  patientProfile = profile;
+let patientProfile: PatientProfile | null = null;
+let patientProfileRevision = 0;
+const listeners = new Set<PatientProfileListener>();
+
+function withComputedBmi<T extends Omit<PatientProfile, 'bmi'>>(profile: T): T & { bmi: number | null } {
+  return {
+    ...profile,
+    bmi: calculateBmi(profile.heightCm, profile.weightKg),
+  };
+}
+
+function notifyPatientProfileListeners() {
+  patientProfileRevision += 1;
+  listeners.forEach((listener) => listener());
+}
+
+function persistPatientProfile() {
+  return savePatientProfileToStorage(patientProfile);
+}
+
+export function subscribePatientProfile(listener: PatientProfileListener) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function getPatientProfileRevision() {
+  return patientProfileRevision;
+}
+
+export function setPatientProfile(profile: Omit<PatientProfile, 'bmi'>) {
+  patientProfile = withComputedBmi(profile);
+  notifyPatientProfileListeners();
+  void persistPatientProfile();
+}
+
+export async function setPatientProfileAsync(profile: Omit<PatientProfile, 'bmi'>) {
+  patientProfile = withComputedBmi(profile);
+  notifyPatientProfileListeners();
+  await persistPatientProfile();
+  return patientProfile;
 }
 
 export function updatePatientProfile(updates: Partial<PatientProfile>) {
@@ -43,12 +88,26 @@ export function updatePatientProfile(updates: Partial<PatientProfile>) {
     return null;
   }
 
-  patientProfile = {
+  patientProfile = withComputedBmi({
     ...patientProfile,
     ...updates,
-  };
+  });
+
+  notifyPatientProfileListeners();
+  void persistPatientProfile();
 
   return patientProfile;
+}
+
+export async function updatePatientProfileAsync(updates: Partial<PatientProfile>) {
+  const updated = updatePatientProfile(updates);
+
+  if (!updated) {
+    return null;
+  }
+
+  await persistPatientProfile();
+  return updated;
 }
 
 export function getPatientProfile() {
@@ -57,4 +116,15 @@ export function getPatientProfile() {
 
 export function clearPatientProfile() {
   patientProfile = null;
+  notifyPatientProfileListeners();
+  void savePatientProfileToStorage(null);
+}
+
+export async function hydratePatientProfile() {
+  const storedProfile = await loadPatientProfileFromStorage();
+
+  if (storedProfile) {
+    patientProfile = withComputedBmi(storedProfile);
+    notifyPatientProfileListeners();
+  }
 }

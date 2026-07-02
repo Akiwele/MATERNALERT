@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ClinicActivityItem } from '@/components/clinic/clinic-activity-item';
@@ -8,10 +9,15 @@ import { ClinicSectionHeader } from '@/components/clinic/clinic-section-header';
 import { ClinicStatCard } from '@/components/clinic/clinic-stat-card';
 import { BrandColors } from '@/constants/brand';
 import { useClinicData } from '@/contexts/clinic-data-context';
+import { getPatientInitials } from '@/utils/patient-home-dashboard';
+
+const PROFILE_AVATAR_SIZE = 40;
 
 export default function ClinicDashboardHomeScreen() {
+  const router = useRouter();
   const { clinicName, stats, todaysAppointments, highRiskAlerts, missedAppointments, activities } =
     useClinicData();
+  const clinicInitials = getPatientInitials(clinicName);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -19,10 +25,20 @@ export default function ClinicDashboardHomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.clinicName}>{clinicName}</Text>
-          <Text style={styles.dashboardLabel}>Clinic Dashboard</Text>
-        </View>
+          <Text style={styles.clinicName} numberOfLines={1}>
+            {clinicName}
+          </Text>
 
+          <Pressable
+            style={({ pressed }) => [styles.profileAvatarButton, pressed && styles.profileAvatarPressed]}
+            onPress={() => router.push('/clinic-dashboard/profile')}
+            accessibilityRole="button"
+            accessibilityLabel="Open clinic profile">
+            <View style={styles.profileAvatar}>
+              <Text style={styles.profileAvatarText}>{clinicInitials}</Text>
+            </View>
+          </Pressable>
+        </View>
         <View style={styles.statsGrid}>
           <ClinicStatCard label="Today's Appointments" value={stats.todaysAppointments} />
           <ClinicStatCard label="Registered Patients" value={stats.registeredPatients} />
@@ -103,17 +119,40 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   header: {
-    gap: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   clinicName: {
+    flex: 1,
+    minWidth: 0,
     fontSize: 24,
     fontWeight: '700',
     color: BrandColors.text,
   },
-  dashboardLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+  profileAvatarButton: {
+    flexShrink: 0,
+  },
+  profileAvatarPressed: {
+    opacity: 0.88,
+  },
+  profileAvatar: {
+    width: PROFILE_AVATAR_SIZE,
+    height: PROFILE_AVATAR_SIZE,
+    borderRadius: PROFILE_AVATAR_SIZE / 2,
+    backgroundColor: BrandColors.primaryMuted,
+    borderWidth: 2,
+    borderColor: BrandColors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileAvatarText: {
     color: BrandColors.primaryDark,
+    fontSize: 13,
+    fontWeight: '700',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   statsGrid: {
     flexDirection: 'row',

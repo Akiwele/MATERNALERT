@@ -21,9 +21,6 @@ export function ClinicPatientListCard({ patient, onPress }: ClinicPatientListCar
         <ClinicRiskBadge riskStatus={patient.riskStatus} />
       </View>
       <Text style={styles.meta}>{patient.phoneNumber}</Text>
-      {patient.ancBookNumber ? (
-        <Text style={styles.meta}>ANC Book: {patient.ancBookNumber}</Text>
-      ) : null}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Week {patient.currentWeek}</Text>
         <Text style={styles.footerText}>

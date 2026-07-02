@@ -8,11 +8,14 @@ import { PatientDashboardTypography } from '@/constants/patient-dashboard-typogr
 export default function PatientEducationScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageTitle}>Education</Text>
+      </View>
+
       <View style={styles.container}>
         <View style={styles.iconWrap}>
           <BookOpen size={32} color={BrandColors.primary} />
         </View>
-        <Text style={styles.title}>Education</Text>
         <Text style={styles.subtitle}>
           Pregnancy education articles and tips will be available here soon.
         </Text>
@@ -25,6 +28,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: BrandColors.background,
+  },
+  pageHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    marginBottom: 4,
+  },
+  pageTitle: {
+    fontSize: PatientDashboardTypography.pageTitle,
+    fontWeight: '700',
+    color: BrandColors.text,
   },
   container: {
     flex: 1,
@@ -41,11 +54,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
-  },
-  title: {
-    fontSize: PatientDashboardTypography.greeting,
-    fontWeight: '700',
-    color: BrandColors.text,
   },
   subtitle: {
     fontSize: PatientDashboardTypography.body,

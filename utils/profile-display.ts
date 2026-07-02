@@ -29,6 +29,14 @@ export function formatProfileFieldValue(value?: string | number | null): string 
   return isEmptyProfileDisplayValue(formatted) ? '' : formatted;
 }
 
+export function formatBmiDisplay(bmi?: number | null): string {
+  if (bmi === undefined || bmi === null || !Number.isFinite(bmi)) {
+    return '—';
+  }
+
+  return bmi.toFixed(1);
+}
+
 export function formatYesNo(value?: boolean | null): string {
   if (value === null || value === undefined) {
     return 'Not provided';

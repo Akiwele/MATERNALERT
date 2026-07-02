@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from 'react-native';
 import { BrandColors } from '@/constants/brand';
 import { PatientProfile } from '@/stores/patient-profile';
 import {
-  calculateBmi,
   calculatePregnancyMetrics,
   formatDisplayDate,
 } from '@/utils/pregnancy-calculations';
@@ -14,7 +13,6 @@ type DashboardSummaryCardsProps = {
 
 export function DashboardSummaryCards({ profile }: DashboardSummaryCardsProps) {
   const pregnancyMetrics = calculatePregnancyMetrics(profile.lmpDate);
-  const bmi = calculateBmi(profile.heightCm, profile.weightKg);
   const { bloodGroup, riskStatus } = profile;
 
   return (
@@ -35,11 +33,6 @@ export function DashboardSummaryCards({ profile }: DashboardSummaryCardsProps) {
 
       <Text style={styles.sectionTitle}>Health Summary</Text>
       <View style={styles.cards}>
-        <SummaryCard
-          label="BMI"
-          value={bmi !== null ? bmi.toString() : '—'}
-          subValue={bmi !== null ? getBmiCategory(bmi) : undefined}
-        />
         <SummaryCard label="Blood Group" value={bloodGroup ?? 'Not provided'} />
         <SummaryCard label="Risk Status" value={riskStatus} highlight={riskStatus === 'High Risk'} />
       </View>
@@ -62,13 +55,6 @@ function SummaryCard({ label, value, subValue, highlight = false }: SummaryCardP
       {subValue ? <Text style={styles.cardSubValue}>{subValue}</Text> : null}
     </View>
   );
-}
-
-function getBmiCategory(bmi: number): string {
-  if (bmi < 18.5) return 'Underweight';
-  if (bmi < 25) return 'Normal range';
-  if (bmi < 30) return 'Overweight';
-  return 'Obese';
 }
 
 const styles = StyleSheet.create({

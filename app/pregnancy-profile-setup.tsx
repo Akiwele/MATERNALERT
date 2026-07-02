@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PregnancyProfileForm } from '@/components/pregnancy-profile-form';
 import { BrandColors } from '@/constants/brand';
-import { setPatientProfile } from '@/stores/patient-profile';
+import { setPatientProfileAsync } from '@/stores/patient-profile';
 import { syncPatientToCareNetwork } from '@/utils/sync-patient-care-network';
 
 function useResponsiveSpacing(screenHeight: number) {
@@ -68,12 +68,12 @@ export default function PregnancyProfileSetupScreen() {
             <PregnancyProfileForm
               mode="setup"
               submitLabel="Continue"
-              onSubmit={(result) => {
+              onSubmit={async (result) => {
                 if (!result.dateOfBirth) {
                   return;
                 }
 
-                setPatientProfile({
+                await setPatientProfileAsync({
                   dateOfBirth: result.dateOfBirth,
                   emergencyContact: result.emergencyContact ?? null,
                   lmpDate: result.lmpDate,

@@ -3,7 +3,7 @@
  */
 export const PatientDashboardTypography = {
   greeting: 25,
-  pageTitle: 25,
+  pageTitle: 28,
   sectionHeading: 19,
   cardTitle: 17,
   cardTitleLarge: 18,

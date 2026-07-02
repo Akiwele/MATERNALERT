@@ -1,5 +1,6 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -15,21 +16,34 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthTextField } from '@/components/auth-text-field';
 import { PrimaryButton } from '@/components/primary-button';
 import { RelationshipSelector } from '@/components/relationship-selector';
+import { usePatientData } from '@/contexts/patient-data-context';
 import { BrandColors } from '@/constants/brand';
 import { EmergencyContactRelationship } from '@/constants/emergency-contact-relationships';
-import { getPatientProfile, updatePatientProfile } from '@/stores/patient-profile';
+import { updatePatientProfileAsync } from '@/stores/patient-profile';
+import { syncPatientToCareNetwork } from '@/utils/sync-patient-care-network';
 
 export default function EditEmergencyContactScreen() {
   const router = useRouter();
-  const profile = getPatientProfile();
+  const { profile } = usePatientData();
   const existing = profile?.emergencyContact;
 
   const [emergencyContactPhone, setEmergencyContactPhone] = useState(existing?.phoneNumber ?? '');
   const [emergencyContactName, setEmergencyContactName] = useState(existing?.name ?? '');
   const [emergencyContactRelationship, setEmergencyContactRelationship] =
     useState<EmergencyContactRelationship | null>(existing?.relationship ?? null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  useFocusEffect(
+    useCallback(() => {
+      const contact = profile?.emergencyContact;
+
+      setEmergencyContactPhone(contact?.phoneNumber ?? '');
+      setEmergencyContactName(contact?.name ?? '');
+      setEmergencyContactRelationship(contact?.relationship ?? null);
+    }, [profile?.emergencyContact]),
+  );
+
+  const handleSave = async () => {
     if (!emergencyContactPhone.trim()) {
       Alert.alert('Missing information', 'Please enter an emergency contact phone number.');
       return;
@@ -43,15 +57,27 @@ export default function EditEmergencyContactScreen() {
       return;
     }
 
-    updatePatientProfile({
-      emergencyContact: {
-        phoneNumber: emergencyContactPhone.trim(),
-        name: emergencyContactName.trim(),
-        relationship: emergencyContactRelationship,
-      },
-    });
+    if (!profile) {
+      Alert.alert('Profile unavailable', 'Complete your pregnancy profile before adding an emergency contact.');
+      return;
+    }
 
-    router.back();
+    setIsSaving(true);
+
+    try {
+      await updatePatientProfileAsync({
+        emergencyContact: {
+          phoneNumber: emergencyContactPhone.trim(),
+          name: emergencyContactName.trim(),
+          relationship: emergencyContactRelationship,
+        },
+      });
+
+      syncPatientToCareNetwork();
+      router.back();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -87,7 +113,12 @@ export default function EditEmergencyContactScreen() {
               selectedRelationship={emergencyContactRelationship}
               onSelect={setEmergencyContactRelationship}
             />
-            <PrimaryButton label="Save Changes" onPress={handleSave} />
+            <PrimaryButton
+              label={isSaving ? 'Saving...' : 'Save Changes'}
+              onPress={() => {
+                void handleSave();
+              }}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

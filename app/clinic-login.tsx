@@ -112,10 +112,7 @@ export default function ClinicLoginScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          <AuthScreenHeader
-            title="Clinic / Doctor Login"
-            subtitle="For verified clinics and health workers only."
-          />
+          <AuthScreenHeader title="Clinic / Doctor Login" />
 
           <View
             style={[

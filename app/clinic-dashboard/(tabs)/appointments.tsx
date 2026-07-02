@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,7 +8,7 @@ import { ClinicSectionHeader } from '@/components/clinic/clinic-section-header';
 import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
 import { useClinicData } from '@/contexts/clinic-data-context';
-import type { ClinicAppointment } from '@/types/clinic-records';
+import { useClinicRescheduleModal } from '@/hooks/use-clinic-reschedule-modal';
 
 export default function ClinicAppointmentsScreen() {
   const router = useRouter();
@@ -20,19 +19,15 @@ export default function ClinicAppointmentsScreen() {
     rescheduleRequestedAppointments,
     markAppointmentAttended,
     markAppointmentMissed,
-    rescheduleAppointment,
   } = useClinicData();
 
-  const [rescheduleTarget, setRescheduleTarget] = useState<ClinicAppointment | null>(null);
+  const { openReschedule, rescheduleModalProps } = useClinicRescheduleModal();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
+        <View>
           <Text style={styles.title}>Appointments</Text>
-          <Text style={styles.subtitle}>
-            Schedule ANC visits for patients and manage attendance.
-          </Text>
         </View>
 
         <PrimaryButton
@@ -49,7 +44,7 @@ export default function ClinicAppointmentsScreen() {
                   key={appointment.id}
                   appointment={appointment}
                   onMarkMissed={() => markAppointmentMissed(appointment.id)}
-                  onReschedule={() => setRescheduleTarget(appointment)}
+                  onReschedule={() => openReschedule(appointment)}
                 />
               ))}
             </View>
@@ -68,7 +63,7 @@ export default function ClinicAppointmentsScreen() {
                   appointment={appointment}
                   onMarkAttended={() => markAppointmentAttended(appointment.id)}
                   onMarkMissed={() => markAppointmentMissed(appointment.id)}
-                  onReschedule={() => setRescheduleTarget(appointment)}
+                  onReschedule={() => openReschedule(appointment)}
                 />
               ))}
             </View>
@@ -87,7 +82,7 @@ export default function ClinicAppointmentsScreen() {
                   appointment={appointment}
                   onMarkAttended={() => markAppointmentAttended(appointment.id)}
                   onMarkMissed={() => markAppointmentMissed(appointment.id)}
-                  onReschedule={() => setRescheduleTarget(appointment)}
+                  onReschedule={() => openReschedule(appointment)}
                 />
               ))}
             </View>
@@ -112,12 +107,7 @@ export default function ClinicAppointmentsScreen() {
         </View>
       </ScrollView>
 
-      <ClinicRescheduleModal
-        visible={rescheduleTarget !== null}
-        appointment={rescheduleTarget}
-        onClose={() => setRescheduleTarget(null)}
-        onConfirm={rescheduleAppointment}
-      />
+      <ClinicRescheduleModal {...rescheduleModalProps} />
     </SafeAreaView>
   );
 }
@@ -133,18 +123,10 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     gap: 20,
   },
-  header: {
-    gap: 6,
-  },
   title: {
     fontSize: 24,
     fontWeight: '700',
     color: BrandColors.text,
-  },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: BrandColors.textSecondary,
   },
   section: {
     gap: 10,

@@ -79,10 +79,7 @@ export default function FacilityRegistrationInfoScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}>
-        <AuthScreenHeader
-          title="Register Your Facility"
-          subtitle="MaternAlert is available to licensed and verified health facilities only."
-        />
+        <AuthScreenHeader title="Register Your Facility" />
 
         <View style={[styles.content, { gap: spacing.contentGap }]}>
           <View style={[styles.section, { gap: spacing.sectionGap }]}>

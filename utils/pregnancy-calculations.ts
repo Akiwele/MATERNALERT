@@ -39,7 +39,18 @@ export function formatDisplayDate(date: Date): string {
   });
 }
 
-export function calculateBmi(heightCm: number, weightKg: number): number | null {
+export function calculateBmi(heightCm?: number | null, weightKg?: number | null): number | null {
+  if (
+    heightCm === undefined ||
+    heightCm === null ||
+    weightKg === undefined ||
+    weightKg === null ||
+    !Number.isFinite(heightCm) ||
+    !Number.isFinite(weightKg)
+  ) {
+    return null;
+  }
+
   if (heightCm <= 0 || weightKg <= 0) {
     return null;
   }

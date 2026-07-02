@@ -1,4 +1,4 @@
-import { BookOpen, Phone, ShieldCheck, UserRound } from 'lucide-react-native';
+import { Phone, ShieldCheck, UserRound } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PrimaryButton } from '@/components/primary-button';
@@ -57,17 +57,6 @@ export function ClinicPatientDetailCard({
 
       <DetailRow icon={UserRound} label="Full Name" value={patient.fullName} />
       <DetailRow icon={Phone} label="Phone Number" value={patient.phoneNumber} />
-      {patient.ancBookNumber ? (
-        <DetailRow icon={BookOpen} label="ANC Book Number" value={patient.ancBookNumber} />
-      ) : (
-        <View style={styles.detailRow}>
-          <BookOpen size={16} color={BrandColors.primary} />
-          <View style={styles.detailContent}>
-            <Text style={styles.detailLabel}>ANC Book Number</Text>
-            <Text style={styles.detailValueMuted}>Not provided</Text>
-          </View>
-        </View>
-      )}
 
       <View style={styles.infoBlock}>
         <Text style={styles.infoLabel}>Registered Clinic</Text>
@@ -158,11 +147,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: BrandColors.text,
-  },
-  detailValueMuted: {
-    fontSize: 15,
-    color: BrandColors.textSecondary,
-    fontStyle: 'italic',
   },
   infoBlock: {
     backgroundColor: BrandColors.primaryMuted,

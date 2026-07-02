@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import {
   Activity,
   AlertTriangle,
@@ -6,12 +6,13 @@ import {
   Calendar,
   CheckCircle,
   ChevronRight,
-  Droplets,
+  Scale,
 } from 'lucide-react-native';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmergencyHelpCard } from '@/components/patient-dashboard/emergency-help-card';
 import { HealthTrendsCard } from '@/components/patient-dashboard/health-trends-card';
 import { HomeStatCard } from '@/components/patient-dashboard/home-stat-card';
 import { PregnancyRiskCard } from '@/components/patient-dashboard/pregnancy-risk-card';
@@ -21,6 +22,7 @@ import { PatientDashboardTypography } from '@/constants/patient-dashboard-typogr
 import { getWeeklyPregnancyTip } from '@/constants/weekly-pregnancy-tips';
 import { useAppointments } from '@/contexts/appointments-context';
 import { useHealth } from '@/contexts/health-context';
+import { usePatientData } from '@/contexts/patient-data-context';
 import { getPatientDisplayName, getPregnancySummaryDisplay } from '@/utils/patient-dashboard-data';
 import {
   formatAppointmentDayDisplay,
@@ -35,13 +37,7 @@ import { getPregnancyRiskDisplay } from '@/utils/pregnancy-risk';
 
 export default function PatientDashboardHomeScreen() {
   const router = useRouter();
-  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
-
-  useFocusEffect(
-    useCallback(() => {
-      setProfileRefreshKey((current) => current + 1);
-    }, []),
-  );
+  const { profile } = usePatientData();
 
   const {
     nextAppointment,
@@ -50,7 +46,7 @@ export default function PatientDashboardHomeScreen() {
     hasHighRiskFromMissedAnc,
     missedAncRiskReason,
   } = useAppointments();
-  const pregnancyRisk = useMemo(() => getPregnancyRiskDisplay(), [profileRefreshKey, nextAppointment]);
+  const pregnancyRisk = useMemo(() => getPregnancyRiskDisplay(), [profile, nextAppointment]);
   const { records, summary } = useHealth();
   const pregnancySummary = getPregnancySummaryDisplay();
   const firstName = getPatientDisplayName();
@@ -67,6 +63,8 @@ export default function PatientDashboardHomeScreen() {
   const appointmentDisplay = nextAppointment
     ? formatAppointmentDayDisplay(nextAppointment)
     : null;
+  const todayReminders = reminders.filter((reminder) => reminder.tone === 'today');
+  const remainingReminders = reminders.filter((reminder) => reminder.tone !== 'today');
 
   return (
     <View style={styles.screen}>
@@ -83,14 +81,82 @@ export default function PatientDashboardHomeScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        {reminders.map((reminder) => (
+        <View style={styles.summaryGrid}>
+          <HomeStatCard
+            label="Last BP"
+            value={
+              latestSystolic !== null && latestDiastolic !== null
+                ? `${latestSystolic}/${latestDiastolic}`
+                : '—'
+            }
+            unit="mmHg"
+            status={bpAlert ? 'warning' : 'normal'}
+            icon={Activity}
+          />
+          <HomeStatCard
+            label="Weight"
+            value={latestWeight !== null ? String(latestWeight) : '—'}
+            unit="kg"
+            status="normal"
+            icon={Scale}
+          />
+          <HomeStatCard
+            label="Next Visit"
+            value={appointmentDisplay ? `${appointmentDisplay.month} ${appointmentDisplay.day}` : '—'}
+            unit={appointmentDisplay ? '· upcoming' : ''}
+            status="upcoming"
+            icon={Calendar}
+          />
+          <HomeStatCard
+            label="Check-ins"
+            value={String(checkInStats.streak)}
+            unit={`/ ${checkInStats.total} weeks`}
+            status="normal"
+            icon={CheckCircle}
+          />
+        </View>
+
+        <EmergencyHelpCard contact={profile?.emergencyContact} patientName={fullName} />
+
+        {appointmentDisplay ? (
+          <Pressable
+            style={styles.sectionCard}
+            onPress={() => router.push('/patient-dashboard/appointments')}>
+            <Text style={styles.sectionTitle}>Next Appointment</Text>
+            <View style={styles.appointmentRow}>
+              <View style={styles.appointmentDateBadge}>
+                <Text style={styles.appointmentDay}>{appointmentDisplay.day}</Text>
+                <Text style={styles.appointmentMonth}>{appointmentDisplay.month}</Text>
+              </View>
+              <View style={styles.appointmentDetails}>
+                <Text style={styles.appointmentLabel}>{appointmentDisplay.label}</Text>
+                <Text style={styles.appointmentMeta}>
+                  {appointmentDisplay.time} · {appointmentDisplay.provider}
+                </Text>
+                <Text style={styles.appointmentMeta}>{appointmentDisplay.location}</Text>
+              </View>
+              <ChevronRight size={16} color={BrandColors.textSecondary} />
+            </View>
+          </Pressable>
+        ) : null}
+
+        {todayReminders.map((reminder) => (
           <View
             key={reminder.id}
-            style={[
-              styles.reminderBanner,
-              reminder.tone === 'today' ? styles.reminderToday : styles.reminderTomorrow,
-            ]}>
-            <Calendar size={16} color={reminder.tone === 'today' ? BrandColors.primaryDark : '#0369A1'} />
+            style={[styles.reminderBanner, styles.reminderToday]}>
+            <Calendar size={16} color={BrandColors.primaryDark} />
+            <View style={styles.alertCopy}>
+              <Text style={styles.reminderTitle}>{reminder.title}</Text>
+              <Text style={styles.reminderMessage}>{reminder.message}</Text>
+            </View>
+          </View>
+        ))}
+
+        {remainingReminders.map((reminder) => (
+          <View
+            key={reminder.id}
+            style={[styles.reminderBanner, styles.reminderTomorrow]}>
+            <Calendar size={16} color="#0369A1" />
             <View style={styles.alertCopy}>
               <Text style={styles.reminderTitle}>{reminder.title}</Text>
               <Text style={styles.reminderMessage}>{reminder.message}</Text>
@@ -128,66 +194,9 @@ export default function PatientDashboardHomeScreen() {
           </View>
         ) : null}
 
-        <View style={styles.statGrid}>
-          <HomeStatCard
-            label="Last BP"
-            value={
-              latestSystolic !== null && latestDiastolic !== null
-                ? `${latestSystolic}/${latestDiastolic}`
-                : '—'
-            }
-            unit="mmHg"
-            status={bpAlert ? 'warning' : 'normal'}
-            icon={Droplets}
-          />
-          <HomeStatCard
-            label="Weight"
-            value={latestWeight !== null ? String(latestWeight) : '—'}
-            unit="kg"
-            status="normal"
-            icon={Activity}
-          />
-          <HomeStatCard
-            label="Next Visit"
-            value={appointmentDisplay ? `${appointmentDisplay.month} ${appointmentDisplay.day}` : '—'}
-            unit={appointmentDisplay ? '· upcoming' : ''}
-            status="upcoming"
-            icon={Calendar}
-          />
-          <HomeStatCard
-            label="Check-ins"
-            value={String(checkInStats.streak)}
-            unit={`/ ${checkInStats.total} weeks`}
-            status="normal"
-            icon={CheckCircle}
-          />
-        </View>
-
         <PregnancyRiskCard risk={pregnancyRisk} />
 
         <HealthTrendsCard bpData={bpTrendData} weightData={weightTrendData} />
-
-        {appointmentDisplay ? (
-          <Pressable
-            style={styles.sectionCard}
-            onPress={() => router.push('/patient-dashboard/appointments')}>
-            <Text style={styles.sectionTitle}>Next Appointment</Text>
-            <View style={styles.appointmentRow}>
-              <View style={styles.appointmentDateBadge}>
-                <Text style={styles.appointmentDay}>{appointmentDisplay.day}</Text>
-                <Text style={styles.appointmentMonth}>{appointmentDisplay.month}</Text>
-              </View>
-              <View style={styles.appointmentDetails}>
-                <Text style={styles.appointmentLabel}>{appointmentDisplay.label}</Text>
-                <Text style={styles.appointmentMeta}>
-                  {appointmentDisplay.time} · {appointmentDisplay.provider}
-                </Text>
-                <Text style={styles.appointmentMeta}>{appointmentDisplay.location}</Text>
-              </View>
-              <ChevronRight size={16} color={BrandColors.textSecondary} />
-            </View>
-          </Pressable>
-        ) : null}
 
         <View style={styles.tipCard}>
           <View style={styles.tipHeader}>
@@ -311,7 +320,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: '#DC2626',
   },
-  statGrid: {
+  summaryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,

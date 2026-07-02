@@ -7,7 +7,6 @@ export type CareNetworkPatient = {
   fullName: string;
   phoneNumber: string;
   emailAddress: string;
-  ancBookNumber?: string;
   registeredClinicName: string;
   currentWeek?: number;
   riskStatus?: string;

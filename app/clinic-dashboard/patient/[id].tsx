@@ -87,10 +87,6 @@ export default function ClinicPatientDetailsScreen() {
           <ClinicSectionHeader title="Patient Details" />
           <ClinicDetailRow label="Full Name" value={patient.fullName} />
           <ClinicDetailRow label="Phone Number" value={patient.phoneNumber} />
-          <ClinicDetailRow
-            label="ANC Book Number"
-            value={patient.ancBookNumber ?? 'Not provided'}
-          />
           <ClinicDetailRow label="Pregnancy Week" value={`Week ${patient.currentWeek}`} />
           <ClinicDetailRow
             label="EDD"

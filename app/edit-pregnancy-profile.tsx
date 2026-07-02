@@ -14,13 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PregnancyProfileForm } from '@/components/pregnancy-profile-form';
+import { usePatientData } from '@/contexts/patient-data-context';
 import { BrandColors } from '@/constants/brand';
-import { getPatientProfile, updatePatientProfile } from '@/stores/patient-profile';
+import { updatePatientProfileAsync } from '@/stores/patient-profile';
 import { syncPatientToCareNetwork } from '@/utils/sync-patient-care-network';
 
 export default function EditPregnancyProfileScreen() {
   const router = useRouter();
-  const profile = getPatientProfile();
+  const { profile } = usePatientData();
   const { height: screenHeight } = useWindowDimensions();
   const headerSpacing = useMemo(() => (screenHeight < 700 ? 16 : 24), [screenHeight]);
 
@@ -60,8 +61,8 @@ export default function EditPregnancyProfileScreen() {
             mode="edit-pregnancy"
             initialProfile={profile}
             submitLabel="Save Changes"
-            onSubmit={(result) => {
-              updatePatientProfile({
+            onSubmit={async (result) => {
+              await updatePatientProfileAsync({
                 lmpDate: result.lmpDate,
                 isFirstPregnancy: result.isFirstPregnancy,
                 obstetricHistory: result.obstetricHistory,
@@ -74,7 +75,6 @@ export default function EditPregnancyProfileScreen() {
               });
 
               syncPatientToCareNetwork();
-
               router.back();
             }}
           />

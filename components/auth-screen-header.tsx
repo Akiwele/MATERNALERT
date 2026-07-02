@@ -5,7 +5,7 @@ import { BrandColors } from '@/constants/brand';
 
 type AuthScreenHeaderProps = {
   title: string;
-  subtitle: string;
+  subtitle?: string;
 };
 
 export function AuthScreenHeader({ title, subtitle }: AuthScreenHeaderProps) {
@@ -17,7 +17,7 @@ export function AuthScreenHeader({ title, subtitle }: AuthScreenHeaderProps) {
         contentFit="contain"
       />
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
+      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
   );
 }

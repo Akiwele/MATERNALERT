@@ -1,5 +1,6 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -16,13 +17,13 @@ import { AuthDateField } from '@/components/auth-date-field';
 import { AuthTextField } from '@/components/auth-text-field';
 import { BloodGroupSelector } from '@/components/blood-group-selector';
 import { PrimaryButton } from '@/components/primary-button';
+import { usePatientData } from '@/contexts/patient-data-context';
 import { BrandColors } from '@/constants/brand';
 import { BloodGroup } from '@/constants/blood-groups';
 import {
-  getPatientRegistration,
-  updatePatientRegistration,
+  updatePatientRegistrationAsync,
 } from '@/stores/patient-registration';
-import { getPatientProfile, updatePatientProfile } from '@/stores/patient-profile';
+import { updatePatientProfileAsync } from '@/stores/patient-profile';
 import { syncPatientToCareNetwork } from '@/utils/sync-patient-care-network';
 import {
   validateFullName,
@@ -32,16 +33,31 @@ import {
 
 export default function EditPersonalInfoScreen() {
   const router = useRouter();
-  const registration = getPatientRegistration();
-  const profile = getPatientProfile();
+  const { profile, registration } = usePatientData();
 
   const [fullName, setFullName] = useState(registration?.fullName ?? '');
   const [phoneNumber, setPhoneNumber] = useState(registration?.phoneNumber ?? '');
   const [email, setEmail] = useState(registration?.email ?? '');
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(profile?.dateOfBirth ?? null);
   const [bloodGroup, setBloodGroup] = useState<BloodGroup | null>(profile?.bloodGroup ?? null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  useFocusEffect(
+    useCallback(() => {
+      if (registration) {
+        setFullName(registration.fullName);
+        setPhoneNumber(registration.phoneNumber);
+        setEmail(registration.email);
+      }
+
+      if (profile) {
+        setDateOfBirth(profile.dateOfBirth);
+        setBloodGroup(profile.bloodGroup);
+      }
+    }, [profile, registration]),
+  );
+
+  const handleSave = async () => {
     const fullNameError = validateFullName(fullName);
     const phoneNumberError = validateGhanaPhoneNumber(phoneNumber);
     const emailError = validateSignUpEmail(email);
@@ -56,20 +72,32 @@ export default function EditPersonalInfoScreen() {
       return;
     }
 
-    updatePatientRegistration({
-      fullName: fullName.trim(),
-      phoneNumber: phoneNumber.trim(),
-      email: email.trim(),
-    });
+    if (!registration) {
+      Alert.alert('Profile unavailable', 'Please sign in again before editing your information.');
+      return;
+    }
 
-    updatePatientProfile({
-      dateOfBirth,
-      bloodGroup,
-    });
+    setIsSaving(true);
 
-    syncPatientToCareNetwork();
+    try {
+      await updatePatientRegistrationAsync({
+        fullName: fullName.trim(),
+        phoneNumber: phoneNumber.trim(),
+        email: email.trim(),
+      });
 
-    router.back();
+      if (profile) {
+        await updatePatientProfileAsync({
+          dateOfBirth,
+          bloodGroup,
+        });
+      }
+
+      syncPatientToCareNetwork();
+      router.back();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -119,7 +147,12 @@ export default function EditPersonalInfoScreen() {
               onSelect={setBloodGroup}
               label="Blood Group"
             />
-            <PrimaryButton label="Save Changes" onPress={handleSave} />
+            <PrimaryButton
+              label={isSaving ? 'Saving...' : 'Save Changes'}
+              onPress={() => {
+                void handleSave();
+              }}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

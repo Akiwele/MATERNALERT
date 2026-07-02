@@ -1,7 +1,6 @@
 import { getPatientRegistration } from '@/stores/patient-registration';
 import { PatientProfile, getPatientProfile } from '@/stores/patient-profile';
 import {
-  calculateBmi,
   calculatePregnancyMetrics,
   formatDisplayDate,
   formatTrimesterDisplay,
@@ -9,6 +8,7 @@ import {
   getWeeksRemaining,
 } from '@/utils/pregnancy-calculations';
 import { getPregnancyRiskDisplay } from '@/utils/pregnancy-risk';
+import { formatBmiDisplay } from '@/utils/profile-display';
 
 export type PatientDashboardData = {
   firstName: string;
@@ -65,7 +65,6 @@ export function getPatientDashboardData(): PatientDashboardData | null {
   }
 
   const metrics = calculatePregnancyMetrics(profile.lmpDate);
-  const bmi = calculateBmi(profile.heightCm, profile.weightKg);
   const pregnancyRisk = getPregnancyRiskDisplay();
   const isHighRisk = pregnancyRisk.status === 'High Risk';
 
@@ -81,7 +80,7 @@ export function getPatientDashboardData(): PatientDashboardData | null {
     progressPercent: getPregnancyProgress(metrics),
     riskStatus: isHighRisk ? 'High Risk' : 'Low Risk',
     riskReason: isHighRisk ? pregnancyRisk.reason : null,
-    bmi: bmi !== null ? bmi.toString() : '—',
+    bmi: formatBmiDisplay(profile.bmi),
     currentWeight: `${profile.weightKg} kg`,
     bloodGroup: profile.bloodGroup ?? 'Not provided',
   };

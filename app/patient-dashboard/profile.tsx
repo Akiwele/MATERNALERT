@@ -29,6 +29,7 @@ import {
 } from '@/components/profile/profile-section-card';
 import { ProfileNavRow } from '@/components/profile/profile-nav-row';
 import { ProfileNavGroup, ProfileToggleRow } from '@/components/profile/profile-settings-rows';
+import { usePatientData } from '@/contexts/patient-data-context';
 import { BrandColors } from '@/constants/brand';
 import { Clinic } from '@/constants/clinics';
 import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
@@ -38,10 +39,9 @@ import {
 } from '@/stores/notification-settings';
 import {
   clearPatientRegistration,
-  getPatientRegistration,
   updatePatientClinic,
 } from '@/stores/patient-registration';
-import { clearPatientProfile, getPatientProfile } from '@/stores/patient-profile';
+import { clearPatientProfile } from '@/stores/patient-profile';
 import { ACCOUNT_TYPE_LOGIN_ROUTES } from '@/types/app-navigation';
 import { getSavedAccountType } from '@/utils/account-type-storage';
 import { clearAuthSession } from '@/utils/auth-session-storage';
@@ -57,20 +57,16 @@ import { syncPatientToCareNetwork, transferPatientToClinic } from '@/utils/sync-
 
 export default function PatientProfileScreen() {
   const router = useRouter();
-  const [, setRefreshKey] = useState(0);
+  const { profile, registration } = usePatientData();
   const [notificationSettings, setNotificationSettings] = useState(getNotificationSettings());
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedTransferClinic, setSelectedTransferClinic] = useState<Clinic | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      setRefreshKey((current) => current + 1);
       setNotificationSettings(getNotificationSettings());
     }, []),
   );
-
-  const registration = getPatientRegistration();
-  const profile = getPatientProfile();
 
   const displayName = registration?.fullName?.trim() ?? '';
 
@@ -106,7 +102,6 @@ export default function PatientProfileScreen() {
     transferPatientToClinic(selectedTransferClinic.name);
     syncPatientToCareNetwork();
     setShowTransferModal(false);
-    setRefreshKey((current) => current + 1);
 
     Alert.alert(
       'Transfer recorded',
@@ -372,13 +367,11 @@ const styles = StyleSheet.create({
   pageHeader: {
     marginTop: 4,
     marginBottom: 4,
-    alignItems: 'center',
   },
   pageTitle: {
-    fontSize: PatientDashboardTypography.greeting,
+    fontSize: PatientDashboardTypography.pageTitle,
     fontWeight: '700',
     color: BrandColors.text,
-    textAlign: 'center',
   },
   secondaryButton: {
     marginTop: 4,

@@ -3,13 +3,14 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { PatientDataProvider } from '@/contexts/patient-data-context';
 import { BrandColors } from '@/constants/brand';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    <>
+    <PatientDataProvider>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -35,6 +36,6 @@ export default function RootLayout() {
         <Stack.Screen name="admin-login" />
       </Stack>
       <StatusBar style="dark" />
-    </>
+    </PatientDataProvider>
   );
 }

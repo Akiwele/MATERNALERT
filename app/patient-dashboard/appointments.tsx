@@ -62,13 +62,7 @@ export default function PatientAppointmentsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text style={styles.title}>Antenatal Appointments</Text>
-          <Text style={styles.subtitle}>
-            Your clinic schedules ANC visits. View upcoming appointments and request a reschedule
-            if needed.
-          </Text>
-        </View>
+        <Text style={styles.title}>Appointments</Text>
 
         {reminders.map((reminder) => (
           <View
@@ -151,19 +145,10 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     gap: 16,
   },
-  header: {
-    gap: 6,
-    marginBottom: 4,
-  },
   title: {
-    fontSize: PatientDashboardTypography.greeting,
+    fontSize: PatientDashboardTypography.pageTitle,
     fontWeight: '700',
     color: BrandColors.text,
-  },
-  subtitle: {
-    fontSize: PatientDashboardTypography.body,
-    lineHeight: 24,
-    color: BrandColors.textSecondary,
   },
   reminderBanner: {
     flexDirection: 'row',

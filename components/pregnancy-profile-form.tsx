@@ -75,8 +75,12 @@ export function PregnancyProfileForm({
   const [previousStillbirths, setPreviousStillbirths] = useState(
     initialProfile?.obstetricHistory?.previousStillbirths?.toString() ?? '',
   );
-  const [heightCm, setHeightCm] = useState(initialProfile?.heightCm.toString() ?? '');
-  const [weightKg, setWeightKg] = useState(initialProfile?.weightKg.toString() ?? '');
+  const [heightCm, setHeightCm] = useState(
+    initialProfile?.heightCm !== undefined ? initialProfile.heightCm.toString() : '',
+  );
+  const [weightKg, setWeightKg] = useState(
+    initialProfile?.weightKg !== undefined ? initialProfile.weightKg.toString() : '',
+  );
   const [bloodGroup, setBloodGroup] = useState<BloodGroup | null>(
     initialProfile?.bloodGroup ?? null,
   );

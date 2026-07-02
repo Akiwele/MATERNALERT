@@ -13,7 +13,7 @@ type HealthTrendsCardProps = {
   bpData: BpTrendPoint[];
   weightData: WeightTrendPoint[];
 };
-
+ 
 const TABS: { id: HealthTrendTab; label: string }[] = [
   { id: 'bp', label: 'BP' },
   { id: 'weight', label: 'Weight' },

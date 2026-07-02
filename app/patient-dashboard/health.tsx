@@ -14,28 +14,37 @@ import { PrimaryButton } from '@/components/primary-button';
 import { BrandColors } from '@/constants/brand';
 import { PatientDashboardTypography } from '@/constants/patient-dashboard-typography';
 import { useHealth } from '@/contexts/health-context';
+import { usePatientData } from '@/contexts/patient-data-context';
 import {
   formatBloodPressure,
   formatHealthRecordDate,
   formatLastUpdated,
   formatWeight,
 } from '@/utils/health-display';
+import { formatBmiDisplay } from '@/utils/profile-display';
+import { calculateBmi } from '@/utils/pregnancy-calculations';
 
 const HEALTH_ACTIONS: {
   id: HealthLogFocusSection;
   label: string;
   icon: typeof Activity;
 }[] = [
-  { id: 'bloodPressure', label: '🩸 Blood Pressure', icon: Activity },
-  { id: 'weight', label: '⚖️ Weight', icon: Scale },
-  { id: 'symptoms', label: '🤒 Symptoms', icon: Thermometer },
-  { id: 'medication', label: '💊 Medications', icon: Pill },
+  { id: 'bloodPressure', label: 'Blood Pressure', icon: Activity },
+  { id: 'weight', label: 'Weight', icon: Scale },
+  { id: 'symptoms', label: 'Symptoms', icon: Thermometer },
+  { id: 'medication', label: 'Medications', icon: Pill },
 ];
+
+function formatSummaryValue(value: string): string {
+  return value === 'Not recorded' ? '—' : value;
+}
 
 export default function PatientHealthScreen() {
   const { records, medications, summary, saveHealthRecord } = useHealth();
+  const { profile } = usePatientData();
   const [isLogModalVisible, setIsLogModalVisible] = useState(false);
   const [logModalMode, setLogModalMode] = useState<LogHealthRecordModalMode>('full');
+  const summaryBmi = calculateBmi(profile?.heightCm, summary.currentWeightKg);
 
   const openFullLogModal = () => {
     setLogModalMode('full');
@@ -66,17 +75,25 @@ export default function PatientHealthScreen() {
           <Text style={styles.summaryTitle}>Health Summary</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Weight:</Text>
-            <Text style={styles.summaryValue}>{formatWeight(summary.currentWeightKg)}</Text>
+            <Text style={styles.summaryValue}>
+              {formatSummaryValue(formatWeight(summary.currentWeightKg))}
+            </Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Blood Pressure:</Text>
             <Text style={styles.summaryValue}>
-              {formatBloodPressure(summary.systolic, summary.diastolic)}
+              {formatSummaryValue(formatBloodPressure(summary.systolic, summary.diastolic))}
             </Text>
           </View>
           <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>BMI:</Text>
+            <Text style={styles.summaryValue}>{formatBmiDisplay(summaryBmi)}</Text>
+          </View>
+          <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Last Updated:</Text>
-            <Text style={styles.summaryValue}>{formatLastUpdated(summary.lastUpdatedAt)}</Text>
+            <Text style={styles.summaryValue}>
+              {formatSummaryValue(formatLastUpdated(summary.lastUpdatedAt))}
+            </Text>
           </View>
         </View>
 
@@ -160,13 +177,11 @@ const styles = StyleSheet.create({
   pageHeader: {
     marginTop: 4,
     marginBottom: 4,
-    alignItems: 'center',
   },
   pageTitle: {
-    fontSize: PatientDashboardTypography.greeting,
+    fontSize: PatientDashboardTypography.pageTitle,
     fontWeight: '700',
     color: BrandColors.text,
-    textAlign: 'center',
   },
   summaryCard: {
     backgroundColor: BrandColors.primaryMuted,

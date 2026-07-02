@@ -67,7 +67,6 @@ export type ClinicPatientRecord = {
   fullName: string;
   phoneNumber: string;
   emailAddress: string;
-  ancBookNumber?: string;
   registeredClinicName: string;
   lmpDate: Date;
   currentWeek: number;

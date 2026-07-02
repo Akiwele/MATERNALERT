@@ -1,11 +1,19 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { CircleHelp, KeyRound, LogOut } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ClinicDetailRow } from '@/components/clinic/clinic-detail-row';
+import { ProfileSectionCard } from '@/components/profile/profile-section-card';
+import { ProfileToggleRow } from '@/components/profile/profile-settings-rows';
 import { BrandColors } from '@/constants/brand';
 import { MOCK_CLINIC_SESSION } from '@/constants/clinic-session';
+import {
+  getClinicNotificationSettings,
+  updateClinicNotificationSettings,
+} from '@/stores/clinic-notification-settings';
 import { ACCOUNT_TYPE_LOGIN_ROUTES } from '@/types/app-navigation';
 import { clearAuthSession } from '@/utils/auth-session-storage';
 
@@ -33,6 +41,18 @@ function ProfileActionRow({
 export default function ClinicProfileScreen() {
   const router = useRouter();
   const clinic = MOCK_CLINIC_SESSION;
+  const [notificationSettings, setNotificationSettings] = useState(getClinicNotificationSettings());
+
+  useFocusEffect(
+    useCallback(() => {
+      setNotificationSettings(getClinicNotificationSettings());
+    }, []),
+  );
+
+  const updateToggle = (key: keyof typeof notificationSettings, value: boolean) => {
+    const next = updateClinicNotificationSettings({ [key]: value });
+    setNotificationSettings({ ...next });
+  };
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -53,18 +73,44 @@ export default function ClinicProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Clinic Profile</Text>
-          <Text style={styles.subtitle}>Verified facility account</Text>
         </View>
 
-        <View style={styles.card}>
-          <ClinicDetailRow label="Clinic Name" value={clinic.name} />
-          <ClinicDetailRow label="HeFRA Licence Number" value={clinic.hefraLicenceNumber} />
-          <ClinicDetailRow label="Official Email" value={clinic.officialEmail} />
-          <ClinicDetailRow label="Phone Number" value={clinic.phoneNumber} />
-          <ClinicDetailRow label="Region" value={clinic.region} />
-          <ClinicDetailRow label="District" value={clinic.district} />
-          <ClinicDetailRow label="Account Status" value={clinic.accountStatus} />
+        <View style={[styles.card, styles.infoCard]}>
+          <ClinicDetailRow showDivider={false} label="Clinic Name" value={clinic.name} />
+          <ClinicDetailRow showDivider={false} label="HEFRA Licence Number" value={clinic.hefraLicenceNumber} />
+          <ClinicDetailRow showDivider={false} label="Official Email" value={clinic.officialEmail} />
+          <ClinicDetailRow showDivider={false} label="Phone Number" value={clinic.phoneNumber} />
+          <ClinicDetailRow showDivider={false} label="Region" value={clinic.region} />
+          <ClinicDetailRow showDivider={false} label="District" value={clinic.district} />
+          <ClinicDetailRow showDivider={false} label="Account Status" value={clinic.accountStatus} />
         </View>
+
+        <ProfileSectionCard title="Notification Settings">
+          <ProfileToggleRow
+            label="New Patient Transfer Requests"
+            description="Get notified when patients request to transfer to your clinic."
+            value={notificationSettings.newPatientTransferRequests}
+            onValueChange={(value) => updateToggle('newPatientTransferRequests', value)}
+          />
+          <ProfileToggleRow
+            label="Appointment Reminders"
+            description="Receive reminders for upcoming patient appointments."
+            value={notificationSettings.appointmentReminders}
+            onValueChange={(value) => updateToggle('appointmentReminders', value)}
+          />
+          <ProfileToggleRow
+            label="Missed Appointment Alerts"
+            description="Be alerted when patients miss scheduled visits."
+            value={notificationSettings.missedAppointmentAlerts}
+            onValueChange={(value) => updateToggle('missedAppointmentAlerts', value)}
+          />
+          <ProfileToggleRow
+            label="Risk Alerts"
+            description="Be notified about high-risk pregnancy updates for your patients."
+            value={notificationSettings.riskAlerts}
+            onValueChange={(value) => updateToggle('riskAlerts', value)}
+          />
+        </ProfileSectionCard>
 
         <View style={styles.card}>
           <ProfileActionRow
@@ -97,15 +143,12 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: 4,
+    marginBottom: 8,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
     color: BrandColors.text,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: BrandColors.textSecondary,
   },
   card: {
     backgroundColor: BrandColors.white,
@@ -119,6 +162,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+  },
+  infoCard: {
+    paddingHorizontal: 26,
+    paddingTop: 16,
+    paddingBottom: 16,
+    gap: 12,
   },
   actionRow: {
     flexDirection: 'row',

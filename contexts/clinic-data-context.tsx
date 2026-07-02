@@ -33,6 +33,7 @@ import {
   isFutureDay,
   isHighBloodPressure,
   isToday,
+  startOfDay,
 } from '@/utils/clinic-date-utils';
 import { searchCareNetworkPatients } from '@/utils/clinic-patient-search';
 import { calculatePregnancyMetrics } from '@/utils/pregnancy-calculations';
@@ -63,7 +64,12 @@ type ClinicDataContextValue = {
   ) => void;
   markAppointmentAttended: (appointmentId: string) => void;
   markAppointmentMissed: (appointmentId: string) => void;
-  rescheduleAppointment: (appointmentId: string, date: Date, time: Date) => void;
+  rescheduleAppointment: (
+    appointmentId: string,
+    date: Date,
+    time: Date,
+    notes?: string,
+  ) => void;
 };
 
 const ClinicDataContext = createContext<ClinicDataContextValue | null>(null);
@@ -404,13 +410,24 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
   );
 
   const rescheduleAppointment = useCallback(
-    (appointmentId: string, date: Date, time: Date) => {
+    (appointmentId: string, date: Date, time: Date, notes?: string) => {
       const appointment = appointments.find((entry) => entry.id === appointmentId);
+
+      const normalizedDate = startOfDay(date);
+      const normalizedTime = new Date(normalizedDate);
+      normalizedTime.setHours(time.getHours(), time.getMinutes(), 0, 0);
+      const trimmedNotes = notes?.trim();
 
       updateAncAppointments((current) =>
         current.map((entry) =>
           entry.id === appointmentId
-            ? { ...entry, date, time, status: 'scheduled' }
+            ? {
+                ...entry,
+                date: normalizedDate,
+                time: normalizedTime,
+                status: 'scheduled',
+                notes: trimmedNotes || undefined,
+              }
             : entry,
         ),
       );

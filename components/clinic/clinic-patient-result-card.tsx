@@ -29,9 +29,6 @@ export function ClinicPatientResultCard({
       <View style={styles.content}>
         <Text style={styles.name}>{patient.fullName}</Text>
         <Text style={styles.meta}>{patient.phoneNumber}</Text>
-        {patient.ancBookNumber ? (
-          <Text style={styles.meta}>ANC Book: {patient.ancBookNumber}</Text>
-        ) : null}
         <Text style={styles.clinicLine}>Registered at {patient.registeredClinicName}</Text>
       </View>
 
